@@ -22,9 +22,10 @@ const NavBar = () => {
           </a>
           <span className="tooltip">Assessments</span>
         </li>
-       
       </ul>
+      
     </div>
+    
   )
 }
 

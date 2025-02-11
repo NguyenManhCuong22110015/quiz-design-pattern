@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import NavBar from './NavBar'
+import NavBarLeft from './NavBarLeft'
 import './NavBar.css'
 const Admin = () => {
   useEffect(() => {
@@ -31,7 +31,7 @@ const Admin = () => {
   }, [])
   return (
     <div className='sidebar'>
-      <NavBar />
+      <NavBarLeft />
     </div>
   )
 }
