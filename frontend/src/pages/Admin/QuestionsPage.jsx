@@ -1,8 +1,8 @@
 import React, { useEffect,useState } from 'react'
-import NavBar from './NavBarLeft'
-import './Assessments.css'
-import NavBarTop from './NavBarTop'
-import AddQuestion from './AddQuestion'
+import NavBar from '../../components/Admin/NavBarLeft'
+import '../../styles/Assessments.css'
+import NavBarTop from '../../components/Admin/NavBarTop'
+import AddQuestion from '../../components/Admin/AddQuestion'
 const Questions = () => {
     const [showModal, setShowModal] = useState(false);
     const handleOpenModal = () => {

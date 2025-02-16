@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import NavBarLeft from './NavBarLeft'
-import './NavBar.css'
+import NavBarLeft from '../../components/Admin/NavBarLeft'
+import '../../styles/NavBar.css'
 const Admin = () => {
   useEffect(() => {
     const sidebar = document.querySelector(".sidebar")

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getQuestionById } from '../utils/apiFunctions';
+import {getQuestionById} from '../../utils/apiFunctions'; // Import getQuestionById function
 import Swal from 'sweetalert2';  // Import SweetAlert2
 
 const QuestionCard = () => {

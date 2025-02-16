@@ -4,10 +4,14 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import InputGroup from 'react-bootstrap/InputGroup';
 import QuestionTypeCard from './QuestionTypeCard';
+import FormComponent from './FormComponent';
 
 const AddQuestion = ({ show, onClose }) => {
   const [quantity, setQuantity] = useState(1);
-
+ const [showModal, setShowModal] = useState(false);
+    const handleOpenModal = () => {
+        setShowModal(true);
+    };
   const handleQuantityChange = (value) => {
     setQuantity((prev) => Math.max(1, prev + value));
   };
@@ -60,11 +64,12 @@ const AddQuestion = ({ show, onClose }) => {
         <p className="text-muted text-center">Enter the number of questions you want to add of this question type.</p>
 
         <div className="text-center">
-          <Button variant="primary">
+          <Button variant="primary"  onClick={handleOpenModal}>
             <i className="fas fa-save me-2"></i>
             Save
           </Button>
         </div>
+        {showModal && <FormComponent show={showModal} onClose={() => setShowModal(false)} />}
       </Modal.Body>
     </Modal>
   );
