@@ -4,7 +4,7 @@ let messageHandler = null;
 
 ws.onopen = () => {
     console.log("🔗 WebSocket connected!");
-    ws.send(JSON.stringify({ type: "ping" }));
+    
 };
 
 ws.onerror = (error) => {
@@ -31,7 +31,7 @@ ws.onmessage = (event) => {
 let messageQueue = [];
 const safeSend = (message) => {
     console.log("📤 SafeSend state:", ws.readyState);
-    if (ws.readyState === 1) {
+    if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
     } else {
         console.log("⏳ Connection not ready, queueing message");
@@ -51,12 +51,33 @@ export const sendAnswer = (username, answer, time) => {
     safeSend({ type: "answer", username, answer, time });
 };
 
-export const sendMessage = (message, username) => {
+export const sendMessage = (roomId,message, username,userAvatar) => {
     safeSend({ 
+        roomId,
         type: "message", 
         message,
-        username 
+        username,
+        userAvatar 
     });
 };
+
+export const createRoom = (roomId, password) => {
+    safeSend({ 
+        type: "create_room", 
+        roomId, 
+        password 
+    });
+};
+
+export const joinRoom = (roomId, username, password) => {
+    safeSend({ 
+        type: "join_room", 
+        roomId, 
+        username, 
+        password 
+    });
+};
+
+// Update existing sendMessage
 
 export default ws;

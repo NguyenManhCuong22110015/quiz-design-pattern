@@ -14,6 +14,8 @@ import ChatPage from './pages/RoomQuestion/ChatPage';
 import QuestionPage from './pages/Admin/QuestionsPage'
 
 import QuestionsPage from './pages/QuestionsPage'
+import CreateRoomPage from './pages/RoomQuestion/CreateRoomPage'
+import RoomListPage from './pages/RoomQuestion/RoomListPage'
 
 const globalStyles = {
   body: {
@@ -34,7 +36,9 @@ function App() {
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/assessments" element={<Assessments/>} />
               <Route path="/admin/question" element={<QuestionPage/>} />
-              <Route path="/room/chat" element={<ChatPage/>} />
+              <Route path="/room/:roomId" element={<ChatPage/>} />
+              <Route path="/room/create" element={<CreateRoomPage/>} />
+              <Route path="/room/list" element={<RoomListPage/>} />
           </Routes>
       </Router>
     </main>
