@@ -16,7 +16,9 @@ import QuestionPage from './pages/Admin/QuestionsPage'
 import QuestionsPage from './pages/QuestionsPage'
 import CreateRoomPage from './pages/RoomQuestion/CreateRoomPage'
 import RoomListPage from './pages/RoomQuestion/RoomListPage'
-
+import MainPage from './pages/MainPage'
+import LoginPage from './pages/LoginPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 const globalStyles = {
   body: {
     fontFamily: 'cnn_sans_display, helveticaneue, Helvetica, Arial, Utkal, sans-serif'
@@ -31,7 +33,7 @@ function App() {
     <main>
       <Router>
           <Routes>
-              <Route path="/" element={<List/>} />
+              <Route path="/" element={<MainPage/>} />
               <Route path="/questions" element={<QuestionsPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/assessments" element={<Assessments/>} />
@@ -39,6 +41,9 @@ function App() {
               <Route path="/room/:roomId" element={<ChatPage/>} />
               <Route path="/room/create" element={<CreateRoomPage/>} />
               <Route path="/room/list" element={<RoomListPage/>} />
+              <Route path="/login" element={<LoginPage/>} />
+              <Route path="/reset-password" element={<ResetPasswordPage/>} />
+
           </Routes>
       </Router>
     </main>

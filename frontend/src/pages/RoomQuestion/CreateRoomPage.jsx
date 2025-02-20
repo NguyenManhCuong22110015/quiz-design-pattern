@@ -11,6 +11,13 @@ const CreateRoomPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Check for userId in localStorage
+        const userId = sessionStorage.getItem('userId');
+        if (!userId) {
+            setError('Please set log in first');
+            return;
+        }
         try {
             // First, create room in database
             const response = await fetch('http://localhost:5000/api/rooms/create', {
@@ -22,10 +29,11 @@ const CreateRoomPage = () => {
                     name: roomName,
                     password,
                     maxPlayers,
-                    createdAt: new Date()
+                    createdAt: new Date(),
+                    createdBy: userId  // Add creator's username
                 })
             });
-
+    
             const data = await response.json();
             
             if (response.ok) {
