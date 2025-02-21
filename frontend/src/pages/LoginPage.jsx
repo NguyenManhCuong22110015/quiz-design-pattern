@@ -1,25 +1,81 @@
 import { useState } from "react";
 import "../styles/Login.css";
+import { login, signup } from "../api/LoginAPi";
+import {showAlert,showSuccess,showError} from "../components/common/Notification";
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [error, setError] = useState('');
 
   const showFormLogIn = () => setIsLogin(true);
   const showFormSignUp = () => setIsLogin(false);
 
+
+  const handleSubmitLogin = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+      email: formData.get("login_email"),
+      password: formData.get("login_password"),
+  }
+    try {
+      const user = await login(data);
+      console.log(user);
+      showSuccess("Login success");
+      setError("Login success");
+    } catch (error) {
+     
+      showError("Login failed");
+      setError("Login failed");
+  };
+}
+
+  const handleSubmitSignup = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+      email: formData.get("reg_email"),
+      password: formData.get("reg_password"),
+  }
+  
+    try {
+      const user = await signup(data);
+      console.log(user);
+      showSuccess("Login success");
+      setError("Login success");
+    } catch (error) {
+      showError("Login failed");
+    
+      setError("Login failed");
+  };
+}
+
   return (
-    <div className="auth-page-wrapper">
-      {isLogin ? <LoginForm showFormSignUp={showFormSignUp} /> : <SignUpForm showFormLogIn={showFormLogIn} />}
+    <div className="auth-page-wrapper w-100">
+      {isLogin ? <LoginForm showFormSignUp={showFormSignUp}
+       handleSubmitLogin={handleSubmitLogin}
+       error={error}
+      
+      
+      /> : <SignUpForm showFormLogIn={showFormLogIn}
+      handleSubmitSignup={handleSubmitSignup}
+      error={error}
+      
+      />}
     </div>
   );
 }
 
-function LoginForm({ showFormSignUp }) {
+function LoginForm({ showFormSignUp,handleSubmitLogin, error }) {
   return (
-    <div className="form-login">
-      <form method="post">
+    <div className="form-login mb-5">
+      
+      <form method="post" onSubmit={handleSubmitLogin}>
         <div className="content">
           <div className="data">
-            <h4 className="text-center">Logo</h4>
+            
+            <div className="d-flex justify-content-center align-item-center">
+             <a href="/"><img src="/imgs/logo.jpg"  ></img></a>
+            </div>
             <h4 className="text-center"><b>Sign in to your CNN account</b></h4>
             <h5 className="text-center">Don't have an account? <span className="redr" onClick={showFormSignUp}>Sign up</span></h5>
             <div className="mt-4">
@@ -32,8 +88,9 @@ function LoginForm({ showFormSignUp }) {
               <input type="password" id="password" name="login_password" required />
              
             </div>
+            {error && <div className="alert alert-danger">{error}</div>}
             <a className="redr" href="/reset-password">Forgot password?</a><br/>
-            <button type="submit" className="submit mt-3 mb-5">Sign in</button>
+            <button type="submit" className="submit mt-3 mb-5" >Sign in</button>
             <SocialButtons />
           </div>
         </div>
@@ -42,13 +99,15 @@ function LoginForm({ showFormSignUp }) {
   );
 }
 
-function SignUpForm({ showFormLogIn }) {
+function SignUpForm({ showFormLogIn ,handleSubmitSignup, error}) {
   return (
-    <div className="form-signup">
-      <form method="post">
+    <div className="form-signup mb-5">
+      <form method="post" onSubmit={handleSubmitSignup}>
         <div className="content">
           <div className="data">
-            <h4 className="text-center">Logo</h4>
+          <div className="d-flex justify-content-center align-item-center">
+             <a href="/"><img src="/imgs/logo.jpg"  ></img></a>
+            </div>
             <h4 className="text-center"><b>Sign up for your CNN account</b></h4>
             <h5 className="text-center">Already have an account? <span className="redr" onClick={showFormLogIn}>Sign in</span></h5>
             <div className="mt-4">
@@ -61,7 +120,8 @@ function SignUpForm({ showFormLogIn }) {
               <input type="password" id="password2" name="reg_password" required />
               <label alt="Enter password"></label>
             </div>
-            <button type="submit" className="submit mb-5">Create Account</button>
+            {error && <div className="alert alert-danger">{error}</div>}
+            <button type="submit" className="submit mb-5" >Create Account</button>
             <SocialButtons />
           </div>
         </div>

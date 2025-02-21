@@ -339,7 +339,7 @@
 }
   
 @media screen and (min-width: 960px) {
-     body {
+      body.auth-page-wrapper {
         background-image: url(/imgs/mobile-gradient.png);
         background-size: cover;         
         background-position: center;    

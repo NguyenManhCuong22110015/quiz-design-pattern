@@ -87,8 +87,11 @@ const ResetPassword = () => {
 
   return (
     <div className="auth-page-wrapper">
-        <div className="form-reset-password">
-      <h4 className="text-center">Logo</h4>
+      <div className="form-reset-password">
+        <div className="content">
+        <div className="d-flex justify-content-center align-item-center">
+              <img src="/imgs/logo.jpg"  ></img>
+            </div>
       <h4 className="text-center"><b>Reset your password</b></h4>
       <p>
         Can’t remember your password? Enter your email address and we will send you an email to create a new password.
@@ -100,9 +103,9 @@ const ResetPassword = () => {
         </div>
       )}
       {step === "email" && (
-        <div>
-          <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <button onClick={handleGetCode} className="btn btn-primary mt-3" disabled={loading}>
+        <div className="w-100">
+          <input type="email" className="form-control " value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <button onClick={handleGetCode} className="btn btn-primary mt-3 w-100" disabled={loading}>
             {loading ? "Sending..." : "Get CODE"}
           </button>
         </div>
@@ -132,6 +135,7 @@ const ResetPassword = () => {
           <button onClick={handleSavePassword} className="btn btn-primary mt-3">Save Password</button>
         </div>
       )}
+      </div>
     </div>
     </div>
   );

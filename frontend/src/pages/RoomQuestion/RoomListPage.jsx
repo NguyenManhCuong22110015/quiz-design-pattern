@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate ,useLocation} from 'react-router-dom';
 import ChoiceName from '../../components/RoomQuestion/ChoiceName';
-
+import { getActiveRoom } from '../../api/roomApi';
+import Navbar from "../../layout/NavBar";
 const RoomListPage = () => {
     const [rooms, setRooms] = useState([]);
     const [showJoinModal, setShowJoinModal] = useState(false);
@@ -16,9 +17,9 @@ const RoomListPage = () => {
 
     const fetchRooms = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/rooms/active');
-            const data = await response.json();
-            setRooms(data);
+            const response = await getActiveRoom();
+           
+            setRooms(response);
         } catch (err) {
             console.error('Error fetching rooms:', err);
         }
@@ -77,7 +78,9 @@ const RoomListPage = () => {
         }
     };
     return (
+
         <div className="container mt-5">
+             <Navbar/>
             <div className="row">
                 <div className="col-md-8 mx-auto">
                     <div className="d-flex justify-content-between align-items-center mb-4">

@@ -7,7 +7,7 @@ const NavBar = ({ auth, authUser }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   return (
-    <div className="container ms-5 me-5">
+    <div className="container ">
     <nav className="navbar navbar-expand-md navbar-dark bg-light fixed-top  ">
       <Link className="navbar-brand" to="/">QUIZZ</Link>
 
