@@ -22,6 +22,18 @@ a:hover {
   color: #535bf2;
 }
 
+.createImageUser{
+  width: '40px';
+  height: '40px';
+  border-radius: '50%';
+  margin-right: '10px';
+  background-color: '#ccc';
+  display: 'flex';
+  align-items: 'center';
+  justify-content: 'center';
+  font-size: '18px'
+}
+
 body {
   margin: 0;
   display: flex;

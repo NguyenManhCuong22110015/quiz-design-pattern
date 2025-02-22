@@ -9,7 +9,7 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   background-image: none ;
-  padding-top: 56px; /* For fixed navbar */
+  padding-top: 56px !important; /* For fixed navbar */
   min-height: 100vh;
   display: flex;
   flex-direction: column;

@@ -20,9 +20,16 @@ export default function AuthPage() {
     try {
       const user = await login(data);
       console.log(user);
+      if (user.token) {
+        localStorage.setItem("token", user.token); 
+        localStorage.setItem("username", user.user.name); 
+        localStorage.setItem("userId", user.user.id); 
+      }
+      window.location.href = '/';
       showSuccess("Login success");
-      setError("Login success");
-    } catch (error) {
+      
+    } 
+    catch (error) {
      
       showError("Login failed");
       setError("Login failed");
@@ -40,12 +47,11 @@ export default function AuthPage() {
     try {
       const user = await signup(data);
       console.log(user);
-      showSuccess("Login success");
-      setError("Login success");
+      showSuccess("Created account success");
+      
     } catch (error) {
-      showError("Login failed");
-    
-      setError("Login failed");
+      showError("Created account failed");
+      
   };
 }
 

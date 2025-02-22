@@ -1,83 +1,115 @@
-const ws = new WebSocket("ws://localhost:5000");
-
-let messageHandler = null;
-
-ws.onopen = () => {
-    console.log("🔗 WebSocket connected!");
-    
-};
-
-ws.onerror = (error) => {
-    console.error("WebSocket Error:", error);
-};
-
-ws.onclose = () => {
-    console.log("❌ WebSocket disconnected");
-};
-
-ws.onmessage = (event) => {
-    
-    try {
-        const data = JSON.parse(event.data);
-        console.log("📩 Parsed data:", data);
-        if (messageHandler) {
-            messageHandler(data);
-        }
-    } catch (error) {
-        console.error("Error parsing message:", error);
-    }
-};
-
+let ws = null;
 let messageQueue = [];
-const safeSend = (message) => {
-    console.log("📤 SafeSend state:", ws.readyState);
-    if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(message));
-    } else {
-        console.log("⏳ Connection not ready, queueing message");
-        messageQueue.push(message);
+let messageHandler = null;
+let isConnected = false;
+
+const initializeWebSocket = () => {
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+    console.log("🔄 WebSocket is already active or connecting...");
+    return ws;
+  }
+
+  ws = new WebSocket("ws://localhost:5000");
+
+  ws.onopen = () => {
+    console.log("🔗 WebSocket connected!");
+    isConnected = true;
+
+    // Send queued messages once connected
+    while (messageQueue.length > 0 && ws.readyState === WebSocket.OPEN) {
+      const message = messageQueue.shift();
+      ws.send(JSON.stringify(message));
     }
+  };
+
+  ws.onerror = (error) => {
+    console.error("❌ WebSocket Error:", error);
+    isConnected = false;
+  };
+
+  ws.onclose = () => {
+    console.log("❌ WebSocket disconnected, retrying in 3 seconds...");
+    isConnected = false;
+    setTimeout(initializeWebSocket, 3000);
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log("📩 Received data:", data);
+      if (messageHandler) {
+        messageHandler(data);
+      }
+    } catch (error) {
+      console.error("❌ Error parsing message:", error);
+    }
+  };
+
+  return ws;
+};
+
+const safeSend = (message) => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    console.log("⏳ WebSocket not ready, queuing message...");
+    messageQueue.push(message);
+
+    // Reinitialize WebSocket if it's closed
+    if (!ws || ws.readyState === WebSocket.CLOSED) {
+      initializeWebSocket();
+    }
+    return;
+  }
+
+  try {
+    ws.send(JSON.stringify(message));
+    console.log("📤 Message sent:", message);
+  } catch (error) {
+    console.error("❌ Error sending message:", error);
+    messageQueue.push(message);
+  }
 };
 
 export function setMessageHandler(handler) {
-    messageHandler = handler;
+  messageHandler = handler;
 }
 
-export function joinGame(username) {
-    safeSend({ type: "join", username });
+// Initialize WebSocket connection
+ws = initializeWebSocket();
+
+// Export functions with safeSend
+export const joinGame = (username) => {
+  safeSend({ type: "join", username });
 };
 
 export const sendAnswer = (username, answer, time) => {
-    safeSend({ type: "answer", username, answer, time });
+  safeSend({ type: "answer", username, answer, time });
 };
 
-export const sendMessage = (roomId,message, username,userAvatar) => {
-    safeSend({ 
-        roomId,
-        type: "message", 
-        message,
-        username,
-        userAvatar 
-    });
+export const sendMessage = (roomId, message, username, userAvatar) => {
+  safeSend({ 
+    type: "message", 
+    roomId,
+    message,
+    username,
+    userAvatar 
+  });
 };
 
 export const createRoom = (roomId, password) => {
-    safeSend({ 
-        type: "create_room", 
-        roomId, 
-        password 
-    });
+  safeSend({ 
+    type: "create_room", 
+    roomId, 
+    password 
+  });
 };
 
 export const joinRoom = (roomId, username, password) => {
-    safeSend({ 
-        type: "join_room", 
-        roomId, 
-        username, 
-        password 
-    });
+  safeSend({ 
+    type: "join_room", 
+    roomId, 
+    username, 
+    password 
+  });
 };
-
-// Update existing sendMessage
 
 export default ws;

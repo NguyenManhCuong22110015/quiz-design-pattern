@@ -1,0 +1,18 @@
+import { API } from "../utils/apiFunctions";
+
+export async function getQuizzesByUserId(userId) {
+    const response = await API.get("api/quizzes/getByUserId?userId=" + userId);
+    return response.data;
+};
+
+
+export async function getQuizzesInRooms(roomId){
+    const response = await API.get("api/rooms/getQuizzes?roomId=" + roomId);
+    return response.data;
+}
+
+
+export async function updateQuizzesInRoom(data) {
+    const response = await API.put("api/rooms/update", data);
+    return response.data;
+}

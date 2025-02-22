@@ -8,18 +8,20 @@ export const Toast = Swal.mixin({
   position: 'top-end',
   showConfirmButton: false,
   timer: 3000,
-  timerProgressBar: true
+  timerProgressBar: true,
+  color:"black",
+  background:"#CFFCDF",
 })
 
 export const showSuccess = (message) => {
-  return Swal.fire({
+  return Toast.fire({
     icon: 'success',
     title: message
   })
 }
 
 export const showError = (message) => {
-  return Swal.fire({
+  return Toast.fire({
     icon: 'error',
     title: message
   })

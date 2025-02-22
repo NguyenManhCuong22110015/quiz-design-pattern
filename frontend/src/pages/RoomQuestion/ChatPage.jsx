@@ -2,7 +2,18 @@ import React, { useState, useEffect } from "react";
 import ws, { joinGame,joinRoom, sendAnswer, sendMessage } from "../../services/websocket.js";
 import ChoiceName from "../../components/RoomQuestion/ChoiceName";
 import { useParams,useNavigate } from "react-router-dom";  // Import from react-router-dom
-
+import NavBar from "../../layout/NavBar.jsx";
+import { MdOutlineGroupAdd } from "react-icons/md";
+import { FaCircleQuestion } from "react-icons/fa6";
+import AddQuiz from "../../components/RoomQuestion/AddQuiz.jsx";
+import ViewMember from "../../components/RoomQuestion/ViewMember.jsx";
+import { TbArrowsExchange } from "react-icons/tb";
+import { FaUsersGear } from "react-icons/fa6";
+import { getRoomById } from "../../api/roomApi.js";
+import ChangeRoomName from "../../components/RoomQuestion/ChangeRoomName.jsx";
+import InviteUser from "../../components/RoomQuestion/InviteUser.jsx";
+import { MdSmartDisplay } from "react-icons/md";
+import { showSuccess, showError } from "../../components/common/Notification.js";
 const ChatPage = () => {
     const { roomId } = useParams();
     const [username, setUsername] = useState("");
@@ -15,7 +26,13 @@ const ChatPage = () => {
     const [showModal, setShowModal] = useState(false);
     const navigate = useNavigate();
     const [isVerifying, setIsVerifying] = useState(true);
-
+    const [showModelAddQuiz, setShowModelAddQuiz] = useState(false);
+    const [showModelMembers, setShowModelMembers] = useState(false);
+    const [members, setMembers] = useState([]);
+    const [room,setRoom] = useState({});
+    const [changeRoom, setChangeRoom] = useState(false);
+    const [showInviteUser, setShowInviteUser] = useState(false);
+    const apiUrl = import.meta.env.VITE_ROOM_URL;
 
     useEffect(() => {
         const verifyRoomAccess = async () => {
@@ -50,10 +67,9 @@ const ChatPage = () => {
   
     useEffect(() => {
         const cachedUsername = localStorage.getItem('username');
-        const cachedTimestamp = localStorage.getItem('username_timestamp');
-        const ONE_HOUR = 60 * 60 * 1000; 
-        if (cachedUsername && cachedTimestamp) {
-            const isValid = (Date.now() - parseInt(cachedTimestamp)) < ONE_HOUR;
+        
+        if (cachedUsername ) {
+            const isValid = true;
             if (isValid) {
                 setUsername(cachedUsername);
                 const cachedAvatar = localStorage.getItem('userAvatar');
@@ -92,6 +108,11 @@ const ChatPage = () => {
                     userAvatar: data.userAvatar
                 }]);
             }
+            else if (data.type === "playerList") {
+                setMembers(data.players.map(playerName => ({
+                    username: playerName
+                })));
+            }
         };
 
         ws.onmessage = handleWebSocketMessage;
@@ -101,7 +122,21 @@ const ChatPage = () => {
             ws.onmessage = null;
         };
     },[]);
-        
+    
+    useEffect(() => {
+        const fetchRoom = async () => {
+            try {
+                const response = await getRoomById(roomId);
+                setRoom(response);
+                
+            } catch (error) {
+                console.error('Fetch room error:', error);
+            }
+        }
+        fetchRoom();
+    }, [roomId]);
+
+
     if (isVerifying) {
         return <div>Verifying room access...</div>;
     }
@@ -125,21 +160,78 @@ const ChatPage = () => {
        
         setShowModal(false);
     };
+
+    const handleShowModal = () => {
+        setShowModelAddQuiz(true);
+    }
+    const handleShowMemberModal = () => {
+        setShowModelMembers(true);
+    }
+
+    const handleChangeRoomName = () => {
+        setChangeRoom(true);
+    }
+    const handleShowInvite = () => {
+        setShowInviteUser(true);
+    }
+    const handlePlayGame = () => {
+        showSuccess("Game started");
+    }
+
     return (
-        <div>
-           {username && <h3>Welcome, {username}!</h3>}
+        <div className="mt-5">
+            <NavBar/>
+           <div className="d-flex justify-content-between align-items-center">
+           {room && <h3>{room.name}</h3>} 
+           
+           <div className="d-flex justify-content-end">
+            
+                <button className="btn btn-danger me-2" onClick={handleChangeRoomName}>
+                    <TbArrowsExchange className="mb-1 me-2" />
+                    <span className="d-none d-md-inline">Change Room name</span>
+                </button>
+                <button className="btn btn-success me-2" onClick={handleShowInvite}>
+                    <MdOutlineGroupAdd className="mb-1 me-2" />
+                    <span className="d-none d-md-inline">Invite</span>
+                </button>
+                <button className="btn btn-secondary me-2" onClick={handleShowModal}>
+                    <FaCircleQuestion className="mb-1 me-2" />
+                    <span className="d-none d-md-inline">Add Quiz</span>
+                </button>
+                <button className="btn btn-secondary" onClick={handleShowMemberModal}>
+                    <FaUsersGear className="mb-1 me-2" />
+                    <span className="d-none d-md-inline">Members</span>
+                </button>
+                <button className="btn btn-success me-2 ms-2" onClick={handlePlayGame}>
+                    <MdSmartDisplay className="mb-1 me-2" />
+                    <span className="d-none d-md-inline">Play Game</span>
+                </button>
+            </div>
+           </div>
            <ChoiceName 
                 show={showModal} 
                 onClose={() => setShowModal(false)}
                 onSubmit={handleSetUsername}
             />
-            <div 
-             id=""
+        <div>
+           <div 
+            id="members"
             style={{
                 border: "1px solid #000", 
-                height: "300px", 
+                height: "20vh", 
                 overflowY: "scroll",
-                marginTop: "20px"
+                marginTop: "20px",
+                width: "70vw"}}>
+
+            </div>
+            <div 
+             id="chat"
+            style={{
+                border: "1px solid #000", 
+                height: "70vh", 
+                overflowY: "scroll",
+                marginTop: "20px",
+                width: "70vw",
             }}>
                 {messages.map((msg, index) => (
                      <div 
@@ -176,26 +268,57 @@ const ChatPage = () => {
                                  justifyContent: 'center',
                                  fontSize: '18px'
                              }}
-                         >
+                         > 
                              {msg.username.charAt(0).toUpperCase()}
                          </div>
                      )}
                      <div>
-                         <strong>{msg.username}</strong>
+                         <strong style={{color:"red"}}>{msg.username}: </strong>
                          {msg.message}
                      </div>
                  </div>
                 ))}
             </div>
-            <div>
+        </div>
+           
+            <div style={{
+                
+            }}
+                className="mt-5 mb-5"
+            >
                 <input
                     type="text"
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     placeholder="Type a message"
+                    className="me-5"
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(e)}
                 />
-                <button onClick={handleSendMessage}>Send</button>
+                <button 
+                    onClick={handleSendMessage}
+                    className="btn btn-secondary w-100 "
+                >
+                    Send
+                </button>
             </div>
+            {showModelAddQuiz && <AddQuiz show={showModelAddQuiz} onClose={() => setShowModelAddQuiz(false)} />}
+            
+            {showModelMembers && <ViewMember 
+            show={showModelMembers}
+            onClose={() => setShowModelMembers(false)} 
+            members={members}
+            />}
+            {changeRoom && <ChangeRoomName
+            show={changeRoom}
+            onClose={() => setChangeRoom(false)}
+            room={room}
+            />}
+
+            {showInviteUser && <InviteUser
+            show={showInviteUser}
+            onClose={() => setShowInviteUser(false)}
+            url={apiUrl + roomId}
+            />}
         </div>
     );
 };

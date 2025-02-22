@@ -19,9 +19,15 @@ import RoomListPage from './pages/RoomQuestion/RoomListPage'
 import MainPage from './pages/MainPage'
 import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import AuthMiddleware from './middleware/AuthMiddleware';
+
+
+
 const globalStyles = {
   body: {
-    fontFamily: 'cnn_sans_display, helveticaneue, Helvetica, Arial, Utkal, sans-serif'
+    fontFamily: 'cnn_sans_display, helveticaneue, Helvetica, Arial, Utkal, sans-serif',
+    paddingTop: "56px !important",
+   
   }
 }
 
@@ -39,7 +45,11 @@ function App() {
               <Route path="/admin/assessments" element={<Assessments/>} />
               <Route path="/admin/question" element={<QuestionPage/>} />
               <Route path="/room/:roomId" element={<ChatPage/>} />
-              <Route path="/room/create" element={<CreateRoomPage/>} />
+              <Route path="/room/create" element={
+                <AuthMiddleware>
+                  <CreateRoomPage/>
+                </AuthMiddleware>
+              } />
               <Route path="/room/list" element={<RoomListPage/>} />
               <Route path="/login" element={<LoginPage/>} />
               <Route path="/reset-password" element={<ResetPasswordPage/>} />

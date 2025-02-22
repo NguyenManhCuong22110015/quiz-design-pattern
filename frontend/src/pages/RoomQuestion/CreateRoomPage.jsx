@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createRoom } from '../../services/websocket';
-
+import { createRoom as creRoom } from '../../api/roomApi';
 const CreateRoomPage = () => {
     const [roomName, setRoomName] = useState('');
     const [password, setPassword] = useState('');
@@ -10,38 +10,24 @@ const CreateRoomPage = () => {
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        // Check for userId in localStorage
-        const userId = sessionStorage.getItem('userId');
-        if (!userId) {
-            setError('Please set log in first');
-            return;
-        }
+        e.preventDefault();  
         try {
-            // First, create room in database
-            const response = await fetch('http://localhost:5000/api/rooms/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+            const userId = localStorage.getItem('userId');
+                const room = {
                     name: roomName,
                     password,
                     maxPlayers,
                     createdAt: new Date(),
-                    createdBy: userId  // Add creator's username
-                })
-            });
-    
-            const data = await response.json();
+                    createdBy: userId
+             }
             
-            if (response.ok) {
-                // Then create WebSocket room
-                createRoom(data.roomId, password);
-                navigate(`/room/${data.roomId}`);
+            const response = await creRoom(room);
+            
+            if (response.success) {
+                createRoom(response.roomId, password);
+                navigate(`/room/${response.roomId}`);
             } else {
-                setError(data.message || 'Failed to create room');
+                setError(response.message || 'Failed to create room');
             }
         } catch (err) {
             setError('Failed to create room');
