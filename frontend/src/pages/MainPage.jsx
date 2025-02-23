@@ -1,5 +1,5 @@
 import {useEffect} from 'react'
-import List from '../components/Users/list'
+import List from '../components/Users/List'
 import Navbar from '../layout/NavBar'
 import Choice from '../components/Choice'
 import "../styles/Footer.css"
