@@ -7,7 +7,6 @@ import 'boxicons/css/boxicons.min.css'
 import 'sweetalert2/dist/sweetalert2.min.css'
 
 import { BrowserRouter as Router , Routes, Route } from "react-router-dom";
-import List from './components/Users/list';
 import AdminPage from './pages/Admin/AdminPage';
 import Assessments from './pages/Admin/Assessments';
 import ChatPage from './pages/RoomQuestion/ChatPage';

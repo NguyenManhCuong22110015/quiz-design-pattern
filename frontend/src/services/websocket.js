@@ -9,7 +9,7 @@ const initializeWebSocket = () => {
     return ws;
   }
 
-  ws = new WebSocket("ws://localhost:5000");
+  ws = new WebSocket("wss://quizze-backend-lb3j.onrender.com");
 
   ws.onopen = () => {
     console.log("🔗 WebSocket connected!");
