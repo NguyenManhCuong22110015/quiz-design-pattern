@@ -20,4 +20,10 @@ export async function createRoom (data) {
 export async function updateRoomName(data) {
   const response = await API.put("/api/rooms/updateRoomName",data);
     return response.data;
+};
+
+
+export async function checkAccessRoom(roomId){
+  const response = await fetch(`http://localhost:5000/api/rooms/${roomId}/check-access`);
+  return response.json();
 }

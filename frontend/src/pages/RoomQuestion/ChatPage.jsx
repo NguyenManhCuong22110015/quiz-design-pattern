@@ -9,7 +9,7 @@ import AddQuiz from "../../components/RoomQuestion/AddQuiz.jsx";
 import ViewMember from "../../components/RoomQuestion/ViewMember.jsx";
 import { TbArrowsExchange } from "react-icons/tb";
 import { FaUsersGear } from "react-icons/fa6";
-import { getRoomById } from "../../api/roomApi.js";
+import { getRoomById, checkAccessRoom } from "../../api/roomApi.js";
 import ChangeRoomName from "../../components/RoomQuestion/ChangeRoomName.jsx";
 import InviteUser from "../../components/RoomQuestion/InviteUser.jsx";
 import { MdSmartDisplay } from "react-icons/md";
@@ -49,9 +49,8 @@ const ChatPage = () => {
                 const hasAccess = sessionStorage.getItem(`room_access_${roomId}`);
                 if (!hasAccess) {
                     // Verify room access with backend
-                    const response = await fetch(`http://localhost:5000/api/rooms/${roomId}/check-access`);
-                    const data = await response.json();
-
+                    const data = await checkAccessRoom(roomId)
+                    console.log("data"+ data);
                     if (!data.success || data.requiresPassword) {
                         navigate('/', { 
                             state: { 
