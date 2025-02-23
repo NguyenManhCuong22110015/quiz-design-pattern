@@ -1,7 +1,7 @@
 import axios from 'axios'
-
+const apiUrl = import.meta.env.VITE_BACKEND_API;
 export const API = axios.create({
-    baseURL : "http://localhost:5000"
+    baseURL : apiUrl
 })
 
 export async function listUsers(){
