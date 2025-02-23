@@ -18,7 +18,7 @@ const InviteUser = ({ show, onClose, url }) => {
             className="form-control mb-3 text-center"
           />
           <button
-            className="btn btn-primary mb-3"
+            className="btn btn-success mb-3 w-100"
             onClick={() => {
               navigator.clipboard.writeText(url);
               showSuccess('Copied to clipboard');

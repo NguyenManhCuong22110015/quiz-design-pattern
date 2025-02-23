@@ -1,0 +1,46 @@
+.question-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.timer {
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.options {
+    display: grid;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.option {
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.option.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+.option.correct {
+    background-color: #28a745;
+    color: white;
+}
+
+.option.incorrect {
+    background-color: #dc3545;
+    color: white;
+}
+
+.results {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}

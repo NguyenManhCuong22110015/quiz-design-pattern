@@ -81,8 +81,13 @@ export const joinGame = (username) => {
   safeSend({ type: "join", username });
 };
 
-export const sendAnswer = (username, answer, time) => {
-  safeSend({ type: "answer", username, answer, time });
+export const sendAnswer = (roomId, answer, timeRemaining) => {
+  safeSend({
+      type: 'submit_answer',
+      roomId,
+      answer,
+      timeRemaining
+  });
 };
 
 export const sendMessage = (roomId, message, username, userAvatar) => {
@@ -111,5 +116,18 @@ export const joinRoom = (roomId, username, password) => {
     password 
   });
 };
+
+
+export const startGame = (roomId) => {
+  safeSend({ type: "start_game", roomId });
+}
+
+export const endGame = (roomId_start) => {
+  safeSend({ type: "end_game", roomId_start });
+}
+
+export const getNextQuestion = (quizId) => {
+  safeSend({ type: "next_question", quizId });
+}
 
 export default ws;

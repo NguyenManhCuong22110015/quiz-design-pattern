@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import ws, { joinGame,joinRoom, sendAnswer, sendMessage } from "../../services/websocket.js";
+import ws, { joinGame,joinRoom, sendAnswer, sendMessage, startGame,endGame } from "../../services/websocket.js";
 import ChoiceName from "../../components/RoomQuestion/ChoiceName";
 import { useParams,useNavigate } from "react-router-dom";  // Import from react-router-dom
 import NavBar from "../../layout/NavBar.jsx";
@@ -14,6 +14,7 @@ import ChangeRoomName from "../../components/RoomQuestion/ChangeRoomName.jsx";
 import InviteUser from "../../components/RoomQuestion/InviteUser.jsx";
 import { MdSmartDisplay } from "react-icons/md";
 import { showSuccess, showError } from "../../components/common/Notification.js";
+import PlayGameModal from "../../components/RoomQuestion/PlayGameModal.jsx";
 const ChatPage = () => {
     const { roomId } = useParams();
     const [username, setUsername] = useState("");
@@ -33,6 +34,13 @@ const ChatPage = () => {
     const [changeRoom, setChangeRoom] = useState(false);
     const [showInviteUser, setShowInviteUser] = useState(false);
     const apiUrl = import.meta.env.VITE_ROOM_URL;
+    const [showPlayGame, setShowPlayGame] = useState(false);
+    const [currentQuestion, setCurrentQuestion] = useState(null);
+    const [timer, setTimer] = useState(0);
+    const [showResults, setShowResults] = useState(false);
+    const [allAnswers, setAllAnswers] = useState([]);
+    const [gameEnded, setGameEnded] = useState(false);
+    const [finalResults, setFinalResults] = useState(null);
 
     useEffect(() => {
         const verifyRoomAccess = async () => {
@@ -64,7 +72,13 @@ const ChatPage = () => {
         verifyRoomAccess();
     }, [roomId, navigate]);
 
-  
+    useEffect(() => {
+        // Check game state on component mount
+        const gameState = localStorage.getItem(`gameInProgress_${roomId}`);
+        if (gameState === 'true') {
+            setShowPlayGame(!showPlayGame);
+        }
+    }, [roomId]);
     useEffect(() => {
         const cachedUsername = localStorage.getItem('username');
         
@@ -96,23 +110,47 @@ const ChatPage = () => {
         const handleWebSocketMessage = (event) => {
             const data = JSON.parse(event.data);
             console.log("📩 Data received FE:", data);
-            if (data.type === "question") {
-                setQuestion(data);
-                setStartTime(Date.now());
-            } else if (data.type === "ranking") {
-                setRanking(data.ranking);
-            } else if (data.type === "message") {
-                setMessages(prev => [...prev, {
-                    username: data.username, 
-                    message: data.message,
-                    userAvatar: data.userAvatar
-                }]);
+            switch(data.type) {
+                case "message":
+                    setMessages(prev => [...prev, {
+                        username: data.username, 
+                        message: data.message,
+                        userAvatar: data.userAvatar
+                    }]);
+                    break;
+                case "playerList":
+                    setMembers(data.players.map(playerName => ({
+                        username: playerName
+                    })));
+                    break;
+                case "start_game":
+                    setShowPlayGame(true);
+                    localStorage.setItem(`gameInProgress_${roomId}`, 'true');
+                    showSuccess("Game started");
+                    break;
+                case "end_game":
+                    setShowPlayGame(false);
+                    localStorage.removeItem(`gameInProgress_${roomId}`);
+                    showSuccess("Game ended!");
+                    break;
+                // Add game state handling here
+                case 'question':
+                    setCurrentQuestion(data.question);
+                    setTimer(data.timeLimit);
+                    setShowResults(false);
+                    break;
+                    
+                case 'all_answers':
+                    setShowResults(true);
+                    setAllAnswers(data.answers);
+                    break;
+                    
+                case 'game_end':
+                    setGameEnded(true);
+                    setFinalResults(data.results);
+                    break;
             }
-            else if (data.type === "playerList") {
-                setMembers(data.players.map(playerName => ({
-                    username: playerName
-                })));
-            }
+            
         };
 
         ws.onmessage = handleWebSocketMessage;
@@ -175,7 +213,7 @@ const ChatPage = () => {
         setShowInviteUser(true);
     }
     const handlePlayGame = () => {
-        showSuccess("Game started");
+        startGame(roomId);
     }
 
     return (
@@ -318,6 +356,22 @@ const ChatPage = () => {
             show={showInviteUser}
             onClose={() => setShowInviteUser(false)}
             url={apiUrl + roomId}
+            />}
+            {showPlayGame && <PlayGameModal
+            show={showPlayGame}
+            onClose={() => {
+                setShowPlayGame(false); 
+                endGame(roomId);
+                localStorage.removeItem(`gameInProgress_${roomId}`);
+            }}
+                    currentQuestion={currentQuestion}
+                    timer={timer}
+                    showResults={showResults}
+                    allAnswers={allAnswers}
+                    gameEnded={gameEnded}
+                    finalResults={finalResults}
+                    onAnswer={(answer, timeRemaining) => sendAnswer(roomId, answer, timeRemaining)}
+
             />}
         </div>
     );
