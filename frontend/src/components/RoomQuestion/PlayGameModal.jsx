@@ -75,20 +75,22 @@ const PlayGameModal = ({
             <div className="question-container">
                 <div className="timer">Time remaining: {timer}s</div>
                 <h3>{currentQuestion.text}</h3>
+                
                 <div className="options">
                     {currentQuestion.options.map((option, index) => (
                         <button
                             key={index}
                             className={`option ${selectedAnswer === index ? 'selected' : ''} 
-                                      ${showResults ? (index === currentQuestion.correctAnswer ? 'correct' : 'incorrect') : ''}`}
+                                    ${showResults ? (index === currentQuestion.correctAnswer ? 'correct' : 'incorrect') : ''}`}
                             onClick={() => handleAnswer(index)}
                             disabled={selectedAnswer !== null || showResults}
                         >
-                            {option}
+                            {/* Access the option text correctly based on your data structure */}
+                            {typeof option === 'object' ? option.option : option}
                         </button>
                     ))}
                 </div>
-                
+                                
                 {showResults && (
                     <div className="results">
                         <h4>Results:</h4>
@@ -104,6 +106,7 @@ const PlayGameModal = ({
         );
     };
 
+
     const endGame = () => {
         localStorage.removeItem(`gameInProgress_${roomId}`);
         onClose();
@@ -115,7 +118,7 @@ const PlayGameModal = ({
                 <Modal.Title>Quiz Game</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                
+                {renderContent()}
             </Modal.Body>
         </Modal>
     );

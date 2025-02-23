@@ -136,6 +136,7 @@ const ChatPage = () => {
                 // Add game state handling here
                 case 'question':
                     setCurrentQuestion(data.question);
+                    console.log("📩 Question received:", data.question);
                     setTimer(data.timeLimit);
                     setShowResults(false);
                     break;
