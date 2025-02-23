@@ -24,6 +24,6 @@ export async function updateRoomName(data) {
 
 
 export async function checkAccessRoom(roomId){
-  const response = await fetch(`http://localhost:5000/api/rooms/${roomId}/check-access`);
-  return response.json();
+  const response = await API.get(`/api/rooms/${roomId}/check-access`);
+  return response.data;
 }
