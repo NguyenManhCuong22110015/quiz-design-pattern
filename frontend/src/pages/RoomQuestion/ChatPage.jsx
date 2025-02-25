@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import ws, { joinGame,joinRoom, sendAnswer, sendMessage, startGame,endGame } from "../../services/websocket.js";
+import ws, { joinGame,joinRoom, sendAnswer, sendMessage, startGame,endGame,initializeWebSocket } from "../../services/websocket.js";
 import ChoiceName from "../../components/RoomQuestion/ChoiceName";
 import { useParams,useNavigate } from "react-router-dom";  // Import from react-router-dom
 import NavBar from "../../layout/NavBar.jsx";
@@ -15,6 +15,7 @@ import InviteUser from "../../components/RoomQuestion/InviteUser.jsx";
 import { MdSmartDisplay } from "react-icons/md";
 import { showSuccess, showError } from "../../components/common/Notification.js";
 import PlayGameModal from "../../components/RoomQuestion/PlayGameModal.jsx";
+import CreateLoading from "../../components/common/CreateLoading.jsx";
 const ChatPage = () => {
     const { roomId } = useParams();
     const [username, setUsername] = useState("");
@@ -41,7 +42,7 @@ const ChatPage = () => {
     const [allAnswers, setAllAnswers] = useState([]);
     const [gameEnded, setGameEnded] = useState(false);
     const [finalResults, setFinalResults] = useState(null);
-
+    
     useEffect(() => {
         const verifyRoomAccess = async () => {
             try {
@@ -60,17 +61,37 @@ const ChatPage = () => {
                         });
                         return;
                     }
+                    // Store room access after verification
+                    sessionStorage.setItem(`room_access_${roomId}`, 'true');
                 }
+                
+                // Get cached username after verification
+                const cachedUsername = localStorage.getItem('username');
+                if (cachedUsername) {
+                    setUsername(cachedUsername);
+                    const cachedAvatar = localStorage.getItem('userAvatar');
+                    if (cachedAvatar) {
+                        setUserAvatar(cachedAvatar);
+                    }
+                    
+                    // Ensure WebSocket is connected before joining room
+                    await initializeWebSocket();
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Small delay to ensure connection
+                    joinRoom(roomId, cachedUsername);
+                } else {
+                    setShowModal(true);
+                }
+    
                 setIsVerifying(false);
             } catch (error) {
                 console.error('Room verification error:', error);
                 navigate('/');
             }
         };
-
+    
         verifyRoomAccess();
     }, [roomId, navigate]);
-
+       
     useEffect(() => {
         // Check game state on component mount
         const gameState = localStorage.getItem(`gameInProgress_${roomId}`);
@@ -78,32 +99,7 @@ const ChatPage = () => {
             setShowPlayGame(!showPlayGame);
         }
     }, [roomId]);
-    useEffect(() => {
-        const cachedUsername = localStorage.getItem('username');
-        
-        if (cachedUsername ) {
-            const isValid = true;
-            if (isValid) {
-                setUsername(cachedUsername);
-                const cachedAvatar = localStorage.getItem('userAvatar');
-                if (cachedAvatar) {
-                    setUserAvatar(cachedAvatar);
-                }
-                // Send join room message with cached data
-                ws.send(JSON.stringify({
-                    type: 'join_room',
-                    roomId,
-                    username: cachedUsername,
-                    userAvatar: ""
-                }));
-            } else {
-                setShowModal(true);
-            }
-        } else {
-            setShowModal(true);
-        }
-       
-    }, [username,roomId]);
+   
 
     useEffect(() => {
         const handleWebSocketMessage = (event) => {
@@ -161,6 +157,7 @@ const ChatPage = () => {
         };
     },[]);
     
+    
     useEffect(() => {
         const fetchRoom = async () => {
             try {
@@ -174,9 +171,15 @@ const ChatPage = () => {
         fetchRoom();
     }, [roomId]);
 
-
+    useEffect(() => {
+        const cachedUsername = localStorage.getItem('username');
+        
+        if (!cachedUsername) {
+            setShowModal(true);
+        }
+    }, []);
     if (isVerifying) {
-        return <div>Verifying room access...</div>;
+        return <div><CreateLoading/></div>;
     }
     const handleSendMessage = (e) => {
         e.preventDefault();
@@ -185,7 +188,7 @@ const ChatPage = () => {
             setInputMessage("");
         }
     };
-    const handleSetUsername = (userData) => {
+    const handleSetUsername = async (userData) => {
         const { name, avatar } = userData;  
         setUsername(name);
         setUserAvatar(avatar)  
@@ -194,9 +197,16 @@ const ChatPage = () => {
         if (avatar) {
             localStorage.setItem('userAvatar', avatar);
         }
-        joinGame(name);
-       
-        setShowModal(false);
+        
+        try {
+            await initializeWebSocket();
+            joinGame(name);
+            joinRoom(roomId, name);
+            setShowModal(false);
+        } catch (error) {
+            console.error('Failed to join room:', error);
+            showError('Failed to join room. Please try again.');
+        }
     };
 
     const handleShowModal = () => {
@@ -217,12 +227,14 @@ const ChatPage = () => {
     }
 
     return (
-        <div className="mt-5">
+        <div className=" mt-5">
             <NavBar/>
-           <div className="d-flex justify-content-between align-items-center">
-           {room && <h3>{room.name}</h3>} 
+           <div className="d-flex justify-content-between align-items-center container">
+           {room &&  <h5 className="card-title mb-0" title={room.name}>
+              {room.name.length > 20 ? `${room.name.substring(0, 20)}...` : room.name}
+            </h5>} 
            
-           <div className="d-flex justify-content-end">
+           <div className=" container d-flex justify-content-end">
             
                 <button className="btn btn-danger me-2" onClick={handleChangeRoomName}>
                     <TbArrowsExchange className="mb-1 me-2" />
@@ -238,7 +250,7 @@ const ChatPage = () => {
                 </button>
                 <button className="btn btn-secondary" onClick={handleShowMemberModal}>
                     <FaUsersGear className="mb-1 me-2" />
-                    <span className="d-none d-md-inline">Members</span>
+                    <span className="d-none d-md-inline">Members ({members.length})</span>
                 </button>
                 <button className="btn btn-success me-2 ms-2" onClick={handlePlayGame}>
                     <MdSmartDisplay className="mb-1 me-2" />
@@ -251,26 +263,18 @@ const ChatPage = () => {
                 onClose={() => setShowModal(false)}
                 onSubmit={handleSetUsername}
             />
-        <div>
-           <div 
-            id="members"
-            style={{
-                border: "1px solid #000", 
-                height: "20vh", 
-                overflowY: "scroll",
-                marginTop: "20px",
-                width: "70vw"}}>
-
-            </div>
+        <div className="container">
+           
             <div 
              id="chat"
             style={{
                 border: "1px solid #000", 
-                height: "70vh", 
+                height: "500px", 
                 overflowY: "scroll",
                 marginTop: "20px",
-                width: "70vw",
-            }}>
+                width: "",
+            }}
+            >
                 {messages.map((msg, index) => (
                      <div 
                      key={index} 
@@ -322,7 +326,7 @@ const ChatPage = () => {
             <div style={{
                 
             }}
-                className="mt-5 mb-5"
+                className="mt-5 mb-5 container"
             >
                 <input
                     type="text"
@@ -334,7 +338,7 @@ const ChatPage = () => {
                 />
                 <button 
                     onClick={handleSendMessage}
-                    className="btn btn-secondary w-100 "
+                    className="btn btn-secondary w-100 mb-5 "
                 >
                     Send
                 </button>

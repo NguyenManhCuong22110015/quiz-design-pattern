@@ -40,7 +40,7 @@ const NavBar = () => {
             <input 
               id="searchInput" 
               className="form-control mr-sm-2" 
-              style={{ border: "1px solid #000000 !important" }}
+              
               type="search" 
               placeholder="Search" 
               aria-label="Search"

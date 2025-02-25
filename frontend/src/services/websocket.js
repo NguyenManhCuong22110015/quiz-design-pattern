@@ -1,80 +1,122 @@
 let ws = null;
 let messageQueue = [];
 let messageHandler = null;
-let isConnected = false;
+let isConnecting = false;
+const apiUrl = import.meta.env.VITE_BACKEND_API;
 
-const initializeWebSocket = () => {
-  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-    console.log("🔄 WebSocket is already active or connecting...");
-    return ws;
-  }
-
-  ws = new WebSocket("wss://quizze-backend-lb3j.onrender.com");
-
-  ws.onopen = () => {
-    console.log("🔗 WebSocket connected!");
-    isConnected = true;
-
-    // Send queued messages once connected
-    while (messageQueue.length > 0 && ws.readyState === WebSocket.OPEN) {
-      const message = messageQueue.shift();
-      ws.send(JSON.stringify(message));
+export const initializeWebSocket = () => {
+  return new Promise((resolve, reject) => {
+    if (ws?.readyState === WebSocket.OPEN) {
+      resolve(ws);
+      return;
     }
-  };
 
-  ws.onerror = (error) => {
-    console.error("❌ WebSocket Error:", error);
-    isConnected = false;
-  };
+    if (isConnecting) {
+      const checkConnection = setInterval(() => {
+        if (ws?.readyState === WebSocket.OPEN) {
+          clearInterval(checkConnection);
+          resolve(ws);
+        }
+      }, 100);
+      return;
+    }
 
-  ws.onclose = () => {
-    console.log("❌ WebSocket disconnected, retrying in 3 seconds...");
-    isConnected = false;
-    setTimeout(initializeWebSocket, 3000);
-  };
+    isConnecting = true;
+    ws = new WebSocket(apiUrl);
 
-  ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log("📩 Received data:", data);
-      if (messageHandler) {
-        messageHandler(data);
+    ws.onopen = () => {
+      isConnecting = false;
+      console.log("🔗 WebSocket connected!");
+      
+      // Process queued messages
+      while (messageQueue.length > 0) {
+        const msg = messageQueue.shift();
+        ws.send(JSON.stringify(msg));
       }
-    } catch (error) {
-      console.error("❌ Error parsing message:", error);
-    }
-  };
+      
+      resolve(ws);
+    };
 
-  return ws;
+    ws.onerror = (error) => {
+      isConnecting = false;
+      console.error("❌ WebSocket Error:", error);
+      reject(error);
+    };
+    ws.onclose = () => {
+      isConnecting = false;
+      console.log("❌ WebSocket disconnected, reconnecting...");
+      ws = null;
+    
+      setTimeout(() => {
+        initializeWebSocket().then((socket) => {
+          ws = socket;
+          processQueue();
+        });
+      }, 3000);
+    };
+  });
 };
 
+export const isWebSocketConnected = () => {
+  return ws && ws.readyState === WebSocket.OPEN;
+};
+
+// Modify the safeSend function to return a promise
 const safeSend = (message) => {
-  if (!ws || ws.readyState !== WebSocket.OPEN) {
-    console.log("⏳ WebSocket not ready, queuing message...");
-    messageQueue.push(message);
+  return new Promise((resolve, reject) => {
+    const sendMessage = () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify(message));
+          console.log("📤 Message sent:", message);
+          resolve();
+        } catch (error) {
+          console.error("❌ Error sending message:", error);
+          reject(error);
+        }
+      } else {
+        console.log("⏳ WebSocket not ready, queuing message:", message);
+        messageQueue.push({ message, resolve, reject });
 
-    // Reinitialize WebSocket if it's closed
-    if (!ws || ws.readyState === WebSocket.CLOSED) {
-      initializeWebSocket();
+        // Kiểm tra nếu chưa có kết nối, thử lại sau 100ms
+        if (!isConnecting) {
+          initializeWebSocket().then(() => {
+            processQueue();
+          });
+        }
+      }
+    };
+
+    if (!ws || ws.readyState === WebSocket.CONNECTING) {
+      messageQueue.push({ message, resolve, reject });
+    } else {
+      sendMessage();
     }
-    return;
-  }
+  });
+};
 
-  try {
-    ws.send(JSON.stringify(message));
-    console.log("📤 Message sent:", message);
-  } catch (error) {
-    console.error("❌ Error sending message:", error);
-    messageQueue.push(message);
+// Hàm xử lý tin nhắn chờ
+const processQueue = () => {
+  while (messageQueue.length > 0 && ws.readyState === WebSocket.OPEN) {
+    const { message, resolve, reject } = messageQueue.shift();
+    try {
+      ws.send(JSON.stringify(message));
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
   }
 };
+
 
 export function setMessageHandler(handler) {
   messageHandler = handler;
 }
 
 // Initialize WebSocket connection
-ws = initializeWebSocket();
+initializeWebSocket().then((socket) => {
+  ws = socket;
+});
 
 // Export functions with safeSend
 export const joinGame = (username) => {
@@ -108,12 +150,12 @@ export const createRoom = (roomId, password) => {
   });
 };
 
-export const joinRoom = (roomId, username, password) => {
+export const joinRoom = (roomId, username) => {
   safeSend({ 
     type: "join_room", 
     roomId, 
     username, 
-    password 
+     
   });
 };
 

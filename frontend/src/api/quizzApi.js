@@ -5,6 +5,10 @@ export async function getQuizzesByUserId(userId) {
     return response.data;
 };
 
+export async function getAllQuizzes(userId) {
+    const response = await API.get("api/quizzes/getAll?userId=" + userId);
+    return response.data;
+};
 
 export async function getQuizzesInRooms(roomId){
     const response = await API.get("api/rooms/getQuizzes?roomId=" + roomId);

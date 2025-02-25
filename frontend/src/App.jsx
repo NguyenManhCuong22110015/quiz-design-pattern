@@ -8,7 +8,7 @@ import 'sweetalert2/dist/sweetalert2.min.css'
 
 import { BrowserRouter as Router , Routes, Route } from "react-router-dom";
 import AdminPage from './pages/Admin/AdminPage';
-import Assessments from './pages/Admin/Assessments';
+import Assessments from './pages/Admin/QuizzPage';
 import ChatPage from './pages/RoomQuestion/ChatPage';
 import QuestionPage from './pages/Admin/QuestionsPage'
 
@@ -41,8 +41,8 @@ function App() {
               <Route path="/" element={<MainPage/>} />
               <Route path="/questions" element={<QuestionsPage />} />
               <Route path="/admin" element={<AdminPage />} />
-              <Route path="/admin/assessments" element={<Assessments/>} />
-              <Route path="/admin/question" element={<QuestionPage/>} />
+              <Route path="/admin/quizz" element={<Assessments/>} />
+              <Route path="/admin/quizz/:quizzId" element={<QuestionPage/>} />
               <Route path="/room/:roomId" element={<ChatPage/>} />
               <Route path="/room/create" element={
                 <AuthMiddleware>

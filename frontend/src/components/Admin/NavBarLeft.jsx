@@ -1,5 +1,5 @@
 
-const NavBar = () => {
+const NavBarLeft = () => {
   return (
     <div className="">
       <div className="logo-details">
@@ -16,11 +16,11 @@ const NavBar = () => {
           <span className="tooltip">Dashboard</span>
         </li>
         <li>
-          <a href="/admin/assessments">
+          <a href="/admin/quizz">
             <i className='bx bxs-archive'></i>
-            <span className="links_name">Assessments</span>
+            <span className="links_name">Quizzes</span>
           </a>
-          <span className="tooltip">Assessments</span>
+          <span className="tooltip">Quizzes</span>
         </li>
       </ul>
       
@@ -29,4 +29,4 @@ const NavBar = () => {
   )
 }
 
-export default NavBar
+export default NavBarLeft

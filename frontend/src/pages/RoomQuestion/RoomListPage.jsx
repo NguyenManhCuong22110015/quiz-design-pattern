@@ -3,6 +3,8 @@ import { useNavigate ,useLocation} from 'react-router-dom';
 import ChoiceName from '../../components/RoomQuestion/ChoiceName';
 import { getActiveRoom } from '../../api/roomApi';
 import Navbar from "../../layout/NavBar";
+import RoomCard from '../../components/RoomQuestion/RoomCard';
+import CreateLoading from '../../components/common/CreateLoading';
 const RoomListPage = () => {
     const [rooms, setRooms] = useState([]);
     const [showJoinModal, setShowJoinModal] = useState(false);
@@ -11,19 +13,24 @@ const RoomListPage = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
     const location = useLocation();
+    const [isLoading, setIsLoading] = useState(false);
     useEffect(() => {
-        fetchRooms();
+        const loadRooms = async () => {
+            setIsLoading(true);
+            try {
+                const response = await getActiveRoom();
+                setRooms(response);
+            } catch (err) {
+                console.error('Error fetching rooms:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        loadRooms();
     }, []);
-
-    const fetchRooms = async () => {
-        try {
-            const response = await getActiveRoom();
-           
-            setRooms(response);
-        } catch (err) {
-            console.error('Error fetching rooms:', err);
-        }
-    };
+    
+   
 
     const handleJoinRoom = async (room) => {
         if (room.password) {
@@ -47,7 +54,9 @@ const RoomListPage = () => {
             }
         }
     }, [location, rooms]);
-
+    if(isLoading){
+        return <CreateLoading/>
+    }
     const handlePasswordSubmit = async () => {
         try {
             const response = await fetch(`http://localhost:5000/api/rooms/verify-password`, {
@@ -82,7 +91,7 @@ const RoomListPage = () => {
         <div className="container mt-5">
              <Navbar/>
             <div className="row">
-                <div className="col-md-8 mx-auto">
+                <div className="col-12 ">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <h2>Available Rooms</h2>
                         <button 
@@ -93,28 +102,18 @@ const RoomListPage = () => {
                         </button>
                     </div>
 
-                    <div className="list-group">
+                    <div className="row row-cols-2 row-cols-md-3 g-4">
                         {rooms.map(room => (
-                            <div 
-                                key={room._id} 
-                                className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                            >
-                                <div>
-                                    <h5 className="mb-1">{room.name}</h5>
-                                    <small>Players: {room.currentPlayers}/{room.maxPlayers}</small>
-                                </div>
-                                <button 
-                                    className="btn btn-success"
-                                    onClick={() => handleJoinRoom(room)}
-                                    disabled={room.currentPlayers >= room.maxPlayers}
-                                >
-                                    Join Room
-                                </button>
+                            <div key={room._id} className="col">
+                                <RoomCard 
+                                    room={room}
+                                    onJoin={handleJoinRoom}
+                                />
                             </div>
                         ))}
                     </div>
 
-                    {/* Join Room Modal */}
+                
                     {showJoinModal && selectedRoom && (
                         <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
                             <div className="modal-dialog">

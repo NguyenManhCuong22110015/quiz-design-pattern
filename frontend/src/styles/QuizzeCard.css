@@ -3,7 +3,7 @@
     align-items: flex-start;
     padding: 15px;
     margin: 10px 0;
-    border: 1px solid #ddd;
+    border: 1px solid #070707;
     border-radius: 8px;
     transition: all 0.3s ease;
     cursor: pointer;
@@ -19,6 +19,7 @@
   .checkbox-container {
     margin-right: 15px;
     padding-top: 2px;
+    
   }
   
   .custom-checkbox {
@@ -29,6 +30,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    border:1px solid #070707;
     transition: all 0.2s ease;
   }
   

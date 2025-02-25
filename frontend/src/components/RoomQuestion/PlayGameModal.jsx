@@ -3,8 +3,7 @@ import { Modal } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import { sendAnswer } from '../../services/websocket';
 import "../../styles/PlayGame.css";
-import ws from "../../services/websocket.js";
-
+import CreateLoading from '../common/CreateLoading';
 
 const PlayGameModal = ({
     show, 
@@ -68,7 +67,7 @@ const PlayGameModal = ({
         }
 
         if (!currentQuestion) {
-            return <div>Waiting for game to start...</div>;
+            return <div><CreateLoading/></div>;
         }
 
         return (

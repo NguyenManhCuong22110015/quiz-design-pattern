@@ -1,34 +1,80 @@
+import { useState } from "react";
+import "../../styles/NavAdminTop.css";
+import { Link } from "react-router-dom";
+import { FaSearch, FaUser } from "react-icons/fa";
+import { IoNotifications } from "react-icons/io5";
+import { FaQuestion } from "react-icons/fa";
+
 
 const NavBarTop = () => {
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const auth = localStorage.getItem('token');
+  const authUser = JSON.parse(localStorage.getItem('user'));
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userId');
+    window.location.href = '/login';
+  };
     return (
-      <div className="ms-5 me-5 mt-2">
-        <nav className="navbar navbar-expand-lg navbar-light bg-light">
-          <a className="navbar-brand" href="#"></a>
-          <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span className="navbar-toggler-icon"></span>
-          </button>
-  
-          <div className="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0"></ul>
-            <div className="d-flex align-items-center">
-              <i className="bi bi-question-circle-fill me-4"></i>
-              <i className="bi bi-search me-4"></i>
-              <i className="bi bi-bell-fill me-4"></i>
+      <nav className="navbarr fixed-top">
+      <div className="navbar-logo"></div>
+        <div className="d-flex justify-content-end ">
+        <button id="" className="btn btn-outline-dark my-2 my-sm-0 ml-2" type="button">
+                    <FaQuestion />
+        </button>
+        <button id="search-icon" className="btn btn-outline-dark my-2 my-sm-0 ml-2" type="button">
+                    <FaSearch />
+        </button>
+        <button id="" className="btn btn-outline-dark my-2 my-sm-0 ml-2" type="button">
+                    <IoNotifications />
+        </button>
+      {!auth ? (
+            <button className="btn btn-outline-success my-2 my-sm-0 ml-2" style={{border: "0px"}} type="button">
+              <Link to="/login" style={{ color: "black" }}>Log in</Link>
+            </button>
+          ) : (
+            <div className="dropdown ml-2">
+              <button 
+                className="btn btn-outline-secondary dropdown-toggle d-flex align-items-center"
+                type="button"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+              >
+                <FaUser className="me-2 mt-1 mb-1" />
+                
+              </button>
               
-              <div className="dropdown">
-                <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i className="bi bi-person-circle"></i>
-                </a>
-                <ul className="dropdown-menu dropdown-menu-end">
-                  <li><a className="dropdown-item" href="/account/profile"><i className="bi bi-person me-2"></i>Profile</a></li>
-                  <li><a className="dropdown-item" href="/logout"><i className="bi bi-box-arrow-right me-2"></i>Log out</a></li>
-                </ul>
+              <div 
+                className={`dropdown-menu dropdown-menu-right ${showUserMenu ? 'show' : ''}`}
+                style={{
+                  position: 'absolute',
+                  transform: 'translate3d(0px, 38px, 0px)',
+                  top: '0px',
+                  left: 'auto',
+                  right: '0px',
+                  willChange: 'transform'
+                }}
+              >
+                <Link 
+                  to="/profile" 
+                  className="dropdown-item"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  <FaUser className="me-2 mb-1  " />
+                  Profile
+                </Link>
+                <div className="dropdown-divider"></div>
+                <button 
+                  className="dropdown-item text-danger" 
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
               </div>
             </div>
-          </div>
-        </nav>
-        <hr />
-      </div>
+          )}
+        </div>
+    </nav>
     )
   }
 

@@ -11,7 +11,7 @@ color: black;
 }
 .main-container {
   width: 100%;
-  max-width: 1400px;  /* Add max-width for container behavior */
+  max-width: 1600px; 
   margin: 0 auto;     /* Center the container */
   padding-right: 15px; /* Standard Bootstrap padding */
   padding-left: 15px;
@@ -34,7 +34,7 @@ color: black;
     justify-content: space-between;
     align-items: center;
     width: 90%;
-    max-width: 1200px;
+    max-width: 1400px;
   }
   
   .logo-link {
@@ -127,30 +127,4 @@ color: black;
     margin-left: 10px;
   }
   
-  @media screen and (max-width: 1024px) {
-    .footer-links a {
-      display: none; 
-    }
   
-   
-    .footer-links span {
-      display: inline-block;
-    }
-  
-    .footer-bottom {
-      text-align: center; 
-      margin-top: 15px;
-      width: 90%;
-      max-width: 1200px;
-    }
-  
-    .policy-links {
-      justify-content: center; 
-      gap: 20px;
-      font-size: 0.9em;
-    }
-  
-    .social-icons {
-      justify-content: center; 
-    }
-  }

@@ -1,17 +1,17 @@
 import Modal from 'react-bootstrap/Modal';
 import { useEffect, useState } from 'react';
-import { getQuizzesByUserId,getQuizzesInRooms,updateQuizzesInRoom } from '../../api/quizzApi';
+import { getQuizzesByUserId,getQuizzesInRooms,updateQuizzesInRoom,getAllQuizzes } from '../../api/quizzApi';
 import QuizzeCard from './QuizzeCard';
 import { Row, Col } from 'react-bootstrap';
 import { useParams } from "react-router-dom";  // Import from react-router-dom
 import { IoSave } from "react-icons/io5";
 import {showSuccess,showError} from "../common/Notification";
-
+import CreateLoading from '../common/CreateLoading';
 const AddQuiz = ({show, onClose}) => {
     const [quizzOfAuthor, setQuizzOfAuthor] = useState([]);
     const [selectedQuizzes, setSelectedQuizzes] = useState([]);
     const { roomId } = useParams();
-    
+    const [allQuizzes, setAllQuizzes] = useState([]);
     const handleQuizSelect = (quizId, isSelected) => {
       if (isSelected) {
         setSelectedQuizzes(prev => [...prev, quizId]);
@@ -26,6 +26,7 @@ const AddQuiz = ({show, onClose}) => {
                 const response = await getQuizzesByUserId(userId);
                 const responseQuizes = await getQuizzesInRooms(roomId);
                 const quizzesInRooms = responseQuizes.QuizzIds;
+                const allQuizzes = await getAllQuizzes(userId);
                 // Map through response and check if quiz exists in room
                 const formattedQuizzes = response.map(quiz => ({
                     id: quiz._id,
@@ -33,7 +34,13 @@ const AddQuiz = ({show, onClose}) => {
                     description: quiz.description,
                     checked: quizzesInRooms.some(roomQuiz => roomQuiz === quiz._id)
                 }));
-        
+                const formattedAllQuizzes = allQuizzes.map(quiz => ({
+                    id: quiz._id,
+                    title: quiz.title,
+                    description: quiz.description,
+                    checked: quizzesInRooms.some(roomQuiz => roomQuiz === quiz._id)
+                }));
+                setAllQuizzes(formattedAllQuizzes);
                 console.log('Formatted Quizzes:', formattedQuizzes);
                 setQuizzOfAuthor(formattedQuizzes);
                 
@@ -74,14 +81,14 @@ const AddQuiz = ({show, onClose}) => {
 
 
     return (
-        <Modal show={show} onHide={onClose} size="xl">
+        <Modal show={show} onHide={onClose} fullscreen>
             <Modal.Header closeButton>
                 <Modal.Title>Quiz</Modal.Title>
                 <div className="d-flex justify-content-end w-100">
                 
                 <a 
                     className="btn btn-secondary me-3" 
-                    href="/admin/assessments" 
+                    href="/admin/quizz" 
                     target="_blank" 
                     rel="noopener noreferrer"
                 >
@@ -108,14 +115,14 @@ const AddQuiz = ({show, onClose}) => {
                             ))}
                         </Row>
                     ) : (
-                        <p>No quizzes found</p>
+                        <CreateLoading/>
                     )}
                 </div>
                 <div>
                     <h5>Danh sách quizzes có sẵn</h5>
                     {quizzOfAuthor.length > 0 ? (
                         <Row className="g-3">
-                            {quizzOfAuthor.map(quiz => (
+                            {allQuizzes.map(quiz => (
                                 <Col key={quiz.id} xs={12} md={6}>
                                     <QuizzeCard
                                         quiz={quiz}
@@ -125,7 +132,7 @@ const AddQuiz = ({show, onClose}) => {
                             ))}
                         </Row>
                     ) : (
-                        <p>No quizzes found</p>
+                        <CreateLoading/>
                     )}
                 </div>
             </Modal.Body>

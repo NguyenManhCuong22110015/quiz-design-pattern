@@ -3,10 +3,22 @@ import NavBar from '../../components/Admin/NavBarLeft'
 import '../../styles/Assessments.css'
 import NavBarTop from '../../components/Admin/NavBarTop'
 import AddQuestion from '../../components/Admin/AddQuestion'
+import { useParams } from 'react-router-dom'
+import { getQuestionsByQuizzId } from '../../api/questionApi' 
 const Questions = () => {
     const [showModal, setShowModal] = useState(false);
     const handleOpenModal = () => {
         setShowModal(true);
+    };
+    const [questions, setQuestions] = useState([])
+    const quizzId = useParams().quizzId
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit'
+      });
     };
     useEffect(() => {
         const sidebar = document.querySelector(".sidebar")
@@ -35,6 +47,19 @@ const Questions = () => {
           }
         }
       }, [])
+
+
+    useEffect(() => {
+        const getQuestions = async () => {
+          const questions = await getQuestionsByQuizzId(quizzId)
+          console.log(questions)
+          setQuestions(questions)
+        }
+        getQuestions()
+      }
+      , [quizzId])
+
+
   return (
     <div className="wrapper">
       <div className='sidebar'>
@@ -49,8 +74,42 @@ const Questions = () => {
                  <i className="bi bi-patch-plus-fill me-3"></i>
                 Add a question
                 </button> 
+
                 {showModal && <AddQuestion show={showModal} onClose={() => setShowModal(false)} />}
             </div>
+            <div className="table-responsive">
+            <table className="table">
+              <thead className="thead-dark">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Text</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Created at</th>
+                  <th scope="col">Updated</th>
+                  <th scope="col" width="100"></th>
+                </tr>
+              </thead>
+              <tbody>
+              {questions.map((quiz, index) => (
+                <tr key={quiz._id}>
+                  <th scope="row">{index + 1}</th>
+                  <td>{quiz.text}</td>
+                  <td>{quiz.type}</td>
+                  <td>{formatDate(quiz.createAt)}</td>
+                 
+                  <td>
+                    <a className="btn btn-primary btn-sm me-2 " href={`/admin/quizz/${quiz._id}`}> 
+                      <i className="bi bi-pencil-fill"></i>
+                    </a>
+                    <button className="btn btn-danger btn-sm">
+                      <i className="bi bi-trash-fill"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              </tbody>
+            </table>
+          </div>
         </div>
         </div>
     </div>

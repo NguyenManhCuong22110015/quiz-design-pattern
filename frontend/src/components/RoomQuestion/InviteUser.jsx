@@ -5,7 +5,7 @@ import { QRCodeCanvas } from 'qrcode.react'
 
 const InviteUser = ({ show, onClose, url }) => {
   return (
-    <Modal show={show} onHide={onClose} size="l">
+    <Modal show={show} onHide={onClose} size="l"  >
       <Modal.Header closeButton>
         <Modal.Title>Invite User</Modal.Title>
       </Modal.Header>
