@@ -1,12 +1,15 @@
 import React from 'react';
 import '../../styles/Custom-spinner.css'; // Đảm bảo rằng bạn đã tạo file CSS này
-import 'ldrs/hatch'
-import 'ldrs/bouncy'
+import { hatch, bouncy } from 'ldrs';
+
 
 // Default values shown  
 
 // Default values shown  
-
+if (typeof window !== "undefined") {
+  hatch.register(); // Add this line
+  bouncy.register(); // Add this line
+}
 const CreateLoading = () => {
   return (
     <div>

@@ -31,7 +31,7 @@ const ChatPage = () => {
     const [showModelAddQuiz, setShowModelAddQuiz] = useState(false);
     const [showModelMembers, setShowModelMembers] = useState(false);
     const [members, setMembers] = useState([]);
-    const [room,setRoom] = useState({});
+    const [room,setRoom] = useState(null);
     const [changeRoom, setChangeRoom] = useState(false);
     const [showInviteUser, setShowInviteUser] = useState(false);
     const apiUrl = import.meta.env.VITE_ROOM_URL;
@@ -50,6 +50,7 @@ const ChatPage = () => {
         sendMessage(roomId, "/restart", username, userAvatar);
     };
     useEffect(() => {
+        
         const verifyRoomAccess = async () => {
             try {
                 // Check if user has room access in session storage
@@ -172,7 +173,9 @@ const ChatPage = () => {
         const fetchRoom = async () => {
             try {
                 const response = await getRoomById(roomId);
+                
                 setRoom(response);
+                
                 
             } catch (error) {
                 console.error('Fetch room error:', error);
