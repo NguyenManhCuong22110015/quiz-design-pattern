@@ -123,12 +123,13 @@ export const joinGame = (username) => {
   safeSend({ type: "join", username });
 };
 
-export const sendAnswer = (roomId, answer, timeRemaining) => {
+export const sendAnswer = (roomId, answer) => {
+  console.log("📤 Submitting answer:", answer)
   safeSend({
       type: 'submit_answer',
       roomId,
       answer,
-      timeRemaining
+      username: localStorage.getItem('username')
   });
 };
 
@@ -171,5 +172,12 @@ export const endGame = (roomId_start) => {
 export const getNextQuestion = (quizId) => {
   safeSend({ type: "next_question", quizId });
 }
+
+export const sendNextQuestion = (roomId) => {
+  safeSend({ 
+      type: "next_question", 
+      roomId 
+  });
+};
 
 export default ws;

@@ -90,15 +90,15 @@ const Questions = () => {
                 </tr>
               </thead>
               <tbody>
-              {questions.map((quiz, index) => (
-                <tr key={quiz._id}>
+              {questions.map((questions, index) => (
+                <tr key={questions._id}>
                   <th scope="row">{index + 1}</th>
-                  <td>{quiz.text}</td>
-                  <td>{quiz.type}</td>
-                  <td>{formatDate(quiz.createAt)}</td>
+                  <td>{questions.text}</td>
+                  <td>{questions.type}</td>
+                  <td>{formatDate(questions.createAt)}</td>
                  
                   <td>
-                    <a className="btn btn-primary btn-sm me-2 " href={`/admin/quizz/${quiz._id}`}> 
+                    <a className="btn btn-primary btn-sm me-2 " href={`/admin/question/${questions._id}`}> 
                       <i className="bi bi-pencil-fill"></i>
                     </a>
                     <button className="btn btn-danger btn-sm">

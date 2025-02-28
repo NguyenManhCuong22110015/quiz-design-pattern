@@ -6,6 +6,9 @@ import fight from "/imgs/swords.png"
 import partners from "/imgs/partners.png"
 import CheckAuth from '../components/common/CheckAuth'
 const token = localStorage.getItem('token');
+import { FiSettings, FiUsers, FiClock } from "react-icons/fi";
+import CustomCard from '../components/common/CustomCard'
+
 const MainPage = () => {
  
   return (
@@ -15,8 +18,8 @@ const MainPage = () => {
         
             <Choice img={fight} name = {"Challenge"} link={"/"}/>
             <Choice  img={partners} name = {"Room"} link={"/room/list"}/>
-          
-        
+
+
       </div>
     </div>
   )

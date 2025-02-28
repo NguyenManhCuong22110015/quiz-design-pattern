@@ -1,0 +1,23 @@
+.custom-card  {
+    border-radius: 25px;
+    box-shadow: 5px 5px 0px #000;
+    padding: 20px;
+    width: 300px;
+    text-align: center;
+    font-weight: bold;
+    position: relative;
+    background: rgb(220, 140, 140);
+}
+  
+  .icon-container {
+    width: 50px;
+    height: 50px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  

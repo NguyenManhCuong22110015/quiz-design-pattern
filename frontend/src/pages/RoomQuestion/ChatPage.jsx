@@ -42,7 +42,13 @@ const ChatPage = () => {
     const [allAnswers, setAllAnswers] = useState([]);
     const [gameEnded, setGameEnded] = useState(false);
     const [finalResults, setFinalResults] = useState(null);
-    
+    const [currentQuestionNumber, setCurrentQuestionNumber] = useState(1);
+    const [totalQuestions, setTotalQuestions] = useState(0);
+
+    const handleRestartGame = () => {
+        // Send restart game message to websocket
+        sendMessage(roomId, "/restart", username, userAvatar);
+    };
     useEffect(() => {
         const verifyRoomAccess = async () => {
             try {
@@ -120,31 +126,35 @@ const ChatPage = () => {
                     break;
                 case "start_game":
                     setShowPlayGame(true);
+                    setGameEnded(false);
                     localStorage.setItem(`gameInProgress_${roomId}`, 'true');
                     showSuccess("Game started");
                     break;
-                case "end_game":
-                    setShowPlayGame(false);
-                    localStorage.removeItem(`gameInProgress_${roomId}`);
-                    showSuccess("Game ended!");
-                    break;
-                // Add game state handling here
+                case 'end_game':
+                        setGameEnded(true);
+                        setFinalResults(data.results);
+                        localStorage.removeItem(`gameInProgress_${roomId}`);
+                        //showSuccess("Game ended!");
+                        break;
                 case 'question':
                     setCurrentQuestion(data.question);
                     console.log("📩 Question received:", data.question);
-                    setTimer(data.timeLimit);
+                    
                     setShowResults(false);
+                    setCurrentQuestionNumber(data.questionNumber || currentQuestionNumber + 1);
+                    setTotalQuestions(data.totalQuestions);
                     break;
                     
-                case 'all_answers':
-                    setShowResults(true);
-                    setAllAnswers(data.answers);
-                    break;
+                    case 'all_answers':
+                        setShowResults(true);
+                        setAllAnswers(data.answers);
+                       
+                        if (currentQuestionNumber === totalQuestions) {
+                            setGameEnded(true);
+                        }
+                        break;
                     
-                case 'game_end':
-                    setGameEnded(true);
-                    setFinalResults(data.results);
-                    break;
+                
             }
             
         };
@@ -155,7 +165,7 @@ const ChatPage = () => {
         return () => {
             ws.onmessage = null;
         };
-    },[]);
+    },[currentQuestionNumber, totalQuestions, roomId]);
     
     
     useEffect(() => {
@@ -374,7 +384,10 @@ const ChatPage = () => {
                     allAnswers={allAnswers}
                     gameEnded={gameEnded}
                     finalResults={finalResults}
-                    onAnswer={(answer, timeRemaining) => sendAnswer(roomId, answer, timeRemaining)}
+                    onAnswer={(answer) => sendAnswer(roomId, answer)}
+                    currentQuestionNumber={currentQuestionNumber}
+            totalQuestions={totalQuestions}
+            onRestart={handleRestartGame}
 
             />}
         </div>

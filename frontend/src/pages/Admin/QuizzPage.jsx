@@ -4,6 +4,7 @@ import '../../styles/Assessments.css'
 import NavBarTop from '../../components/Admin/NavBarTop'
 import { getQuizzesByUserId } from '../../api/quizzApi'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
+import { Link } from 'react-router-dom'
 const Admin = () => {
 
   const [quizzes , setQuizzes] = useState([])
@@ -120,8 +121,12 @@ const Admin = () => {
                   <td>{formatDate(quiz.createAt)}</td>
                   <td>{getTimeAgo(quiz.updatedAt)}</td>
                   <td>
-                   
-                  
+                  <Link 
+                        to={`/admin/quizz/${quiz._id}`} 
+                        className="btn btn-outline-primary btn-sm"
+                      >
+                        Edit
+                  </Link>
                   </td>
                   <td>
                   <ConfirmDialog

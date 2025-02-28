@@ -56,7 +56,7 @@ export default function AuthPage() {
 }
 
   return (
-    <div className="auth-page-wrapper w-100">
+    <div className="auth-page-wrapper d-flex justify-content-center align-items-center min-vh-100">
       {isLogin ? <LoginForm showFormSignUp={showFormSignUp}
        handleSubmitLogin={handleSubmitLogin}
        error={error}
