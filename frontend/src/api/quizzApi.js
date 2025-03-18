@@ -20,3 +20,8 @@ export async function updateQuizzesInRoom(data) {
     const response = await API.put("api/rooms/update", data);
     return response.data;
 }
+
+export async function getQuizzesByCategory(category) {
+    const response = await API.get("api/quizzes/getByCategory?category=" + category);
+    return response.data;
+}

@@ -19,7 +19,8 @@ import MainPage from './pages/MainPage'
 import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import AuthMiddleware from './middleware/AuthMiddleware';
-
+import PlayPage from './pages/PlayPage'
+import ProfilePage from './pages/ProfilePage'
 
 
 const globalStyles = {
@@ -52,7 +53,8 @@ function App() {
               <Route path="/room/list" element={<RoomListPage/>} />
               <Route path="/login" element={<LoginPage/>} />
               <Route path="/reset-password" element={<ResetPasswordPage/>} />
-
+              <Route path="/play/:id" element={<PlayPage/>} />
+              <Route path="/profile" element={<ProfilePage/>} />
           </Routes>
       </Router>
     </main>

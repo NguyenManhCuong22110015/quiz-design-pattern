@@ -19,15 +19,18 @@ i {
   left: 0;
   top: 0;
   height: 100%;
-  width: 78px;
+  width: 250px; /* Changed from 78px to 250px (expanded width) */
   background: #11101D;
   padding: 6px 14px;
   z-index: 99;
   transition: all 0.5s ease;
 }
-.sidebar.open{
-  width: 250px;
+
+/* Add a new class for collapsed state */
+.sidebar.closed {
+  width: 78px;
 }
+
 .sidebar .logo-details{
   height: 60px;
   display: flex;
@@ -35,20 +38,23 @@ i {
   position: relative;
 }
 .sidebar .logo-details .icon{
-  opacity: 0;
+  opacity: 1; /* Show by default */
   transition: all 0.5s ease;
 }
 .sidebar .logo-details .logo_name{
   color: #fff;
   font-size: 20px;
   font-weight: 600;
-  opacity: 0;
+  opacity: 1; /* Show by default */
   transition: all 0.5s ease;
 }
-.sidebar.open .logo-details .icon,
-.sidebar.open .logo-details .logo_name{
-  opacity: 1;
+
+/* Hide when closed */
+.sidebar.closed .logo-details .icon,
+.sidebar.closed .logo-details .logo_name {
+  opacity: 0;
 }
+
 .sidebar .logo-details #btn{
   position: absolute;
   top: 50%;
@@ -57,12 +63,12 @@ i {
   font-size: 22px;
   transition: all 0.4s ease;
   font-size: 23px;
-  text-align: center;
+  text-align: right; /* Align right by default */
   cursor: pointer;
   transition: all 0.5s ease;
 }
-.sidebar.open .logo-details #btn{
-  text-align: right;
+.sidebar.closed .logo-details #btn {
+  text-align: center;
 }
 .sidebar i{
   color: #fff;
@@ -89,7 +95,7 @@ i {
   top: -20px;
   left: calc(100% + 15px);
   z-index: 3;
-  background: #fff;
+  background: #974848;
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
   padding: 6px 12px;
   border-radius: 4px;
@@ -99,16 +105,15 @@ i {
   white-space: nowrap;
   pointer-events: none;
   transition: 0s;
+  display: none; /* Hide by default */
 }
-.sidebar li:hover .tooltip{
+.sidebar.closed li:hover .tooltip {
   opacity: 1;
   pointer-events: auto;
   transition: all 0.4s ease;
   top: 50%;
   transform: translateY(-50%);
-}
-.sidebar.open li .tooltip{
-  display: none;
+  display: block; /* Show when closed */
 }
 .sidebar input{
   font-size: 15px;
@@ -163,13 +168,13 @@ i {
   font-size: 15px;
   font-weight: 400;
   white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1; /* Show by default */
+  pointer-events: auto; /* Enable by default */
   transition: 0.4s;
 }
-.sidebar.open li a .links_name{
-  opacity: 1;
-  pointer-events: auto;
+.sidebar.closed li a .links_name {
+  opacity: 0;
+  pointer-events: none;
 }
 .sidebar li a:hover .links_name,
 .sidebar li a:hover i{
@@ -185,7 +190,7 @@ i {
 .sidebar li.profile{
   position: fixed;
   height: 60px;
-  width: 78px;
+  width: 250px; /* Match expanded width */
   left: 0;
   bottom: -8px;
   padding: 10px 14px;
@@ -193,8 +198,8 @@ i {
   transition: all 0.5s ease;
   overflow: hidden;
 }
-.sidebar.open li.profile{
-  width: 250px;
+.sidebar.closed li.profile {
+  width: 78px;
 }
 .sidebar li .profile-details{
   display: flex;
@@ -239,14 +244,14 @@ i {
   background: #E4E9F7;
   min-height: 100vh;
   top: 0;
-  left: 78px;
-  width: calc(100vw - 78px);
+  left: 250px; /* Updated from 78px to 250px */
+  width: calc(100vw - 250px); /* Updated calculation */
   transition: all 0.5s ease;
   z-index: 2;
 }
-.sidebar.open ~ .home-section{
-  left: 250px;
-  width: calc(100vw - 250px);
+.sidebar.closed ~ .home-section {
+  left: 78px;
+  width: calc(100vw - 78px);
 }
 .home-section .text{
   display: inline-block;
@@ -259,4 +264,144 @@ i {
   .sidebar li .tooltip{
     display: none;
   }
+}
+
+/* Active link styles */
+.sidebar li a.active {
+  background: #FFF;
+}
+
+.sidebar li a.active .links_name,
+.sidebar li a.active i {
+  color: #11101D;
+}
+
+.sidebar li a.active {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Custom navbar styles */
+
+/* White hamburger icon */
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
+}
+
+.custom-toggler {
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  outline: none !important;
+}
+
+.custom-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Mobile layout adjustments */
+@media (max-width: 767.98px) {
+  .mobile-nav-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 10px 0;
+  }
+  
+  .search-container {
+    width: 100%;
+    max-width: 300px;
+    margin: 10px auto;
+  }
+  
+  .auth-buttons {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .navbar-collapse {
+    background-color: #343a40;
+    border-radius: 0 0 8px 8px;
+    padding: 10px;
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+  }
+  
+  #search-icon {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    background-color: white;
+  }
+  
+  .form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  
+  .search-form {
+    width: 100%;
+  }
+  
+  .user-dropdown .dropdown-menu {
+    position: static !important;
+    float: none;
+    width: 100%;
+    margin-top: 10px;
+    transform: none !important;
+  }
+}
+
+/* Dropdown positioning */
+@media (min-width: 768px) {
+  .navbar-collapse {
+    justify-content: flex-end;
+  }
+  
+  .search-container {
+    margin-right: 15px;
+  }
+  
+  .user-dropdown .dropdown-menu {
+    position: absolute;
+    right: 0;
+    left: auto;
+    margin-top: 0.5rem;
+  }
+  
+  .username-text {
+    display: none;
+  }
+}
+
+/* Make dropdown menu show correctly */
+.dropdown-menu.show {
+  display: block;
+}
+
+/* Style dropdown menu */
+.dropdown-menu {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Button styling */
+.btn-outline-success, .btn-outline-secondary {
+  background-color: transparent;
+}
+
+.btn-outline-success:hover {
+  color: white !important;
+}
+
+.btn-outline-success a:hover {
+  color: white !important;
 }

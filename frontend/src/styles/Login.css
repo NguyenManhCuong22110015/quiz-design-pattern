@@ -1,3 +1,15 @@
+body.auth-page {
+  margin: 0;
+  padding: 0;
+  background-image: url(/imgs/mobile-gradient.png);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
 .auth-page-wrapper .hidden {
   display: none;
 }
