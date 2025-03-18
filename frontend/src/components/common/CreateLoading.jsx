@@ -1,30 +1,30 @@
 import React from 'react';
-import '../../styles/Custom-spinner.css'; // Đảm bảo rằng bạn đã tạo file CSS này
+import '../../styles/Custom-spinner.css';
 import { hatch, bouncy } from 'ldrs';
 
-
-// Default values shown  
-
-// Default values shown  
+// Register LDRS components
 if (typeof window !== "undefined") {
-  hatch.register(); // Add this line
-  bouncy.register(); // Add this line
+  hatch.register();
+  bouncy.register();
 }
-const CreateLoading = () => {
+
+const CreateLoading = ({ isVisible = true }) => {
+  // If not visible, don't render anything
+  if (!isVisible) return null;
+  
   return (
-    <div>
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <span className="sr-only me-3 ">Loading...  </span>
-       
-        <l-hatch
-          size="28"
-          stroke="4"
-          speed="3.5"
-          color="green" 
-        ></l-hatch>
-        
-    </div>
-     
+    <div className="loading-overlay">
+      <div className="loading-container">
+        <div className="loading-content">
+          <l-bouncy
+            size="40"
+            stroke="5"
+            speed="2.5"
+            color="white"
+          ></l-bouncy>
+          <p className="loading-text mt-3">Loading...</p>
+        </div>
+      </div>
     </div>
   );
 };

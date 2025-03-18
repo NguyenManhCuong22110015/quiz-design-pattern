@@ -4,4 +4,76 @@
     border-width: 5px;
     color: #50d27d; 
   }
-  
+  /* Full-screen overlay with semi-transparent background */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Ensure it's above everything */
+}
+
+/* Container for the spinner */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.5); /* Darker center area */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px); /* Adds blur effect */
+  -webkit-backdrop-filter: blur(5px); /* For Safari */
+}
+
+/* Content inside the container */
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Text styling */
+.loading-text {
+  color: white;
+  font-size: 1.2rem;
+  margin-top: 15px;
+  font-weight: 500;
+}
+
+/* Animation for a subtle pulsing effect */
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.loading-content l-hatch {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+/* Optional: Add a fade-in effect */
+.loading-overlay {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

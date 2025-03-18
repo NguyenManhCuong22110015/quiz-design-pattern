@@ -21,6 +21,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import AuthMiddleware from './middleware/AuthMiddleware';
 import PlayPage from './pages/PlayPage'
 import ProfilePage from './pages/ProfilePage'
+import ManagePage from './pages/ManagePage'
 
 
 const globalStyles = {
@@ -55,6 +56,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPasswordPage/>} />
               <Route path="/play/:id" element={<PlayPage/>} />
               <Route path="/profile" element={<ProfilePage/>} />
+              <Route path="/manage" element={<ManagePage/>} />
           </Routes>
       </Router>
     </main>
