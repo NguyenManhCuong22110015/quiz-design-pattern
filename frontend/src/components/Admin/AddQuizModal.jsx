@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
 import { showSuccess, showError } from '../common/Notification';
-import { uploadImage } from '../../api/quizzApi';
+import { uploadImage } from '../../api/mediaApi';
 import CreateLoading from '../common/CreateLoading';
 
 

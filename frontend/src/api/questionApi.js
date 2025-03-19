@@ -10,8 +10,24 @@ export const getQuestionById = async (questionId) => {
   return data;
 }
 
-export const getQuestionsByQuizzId = async (quizzId) => {
-  const { data } = await API.get(`/api/questions/getQuestionsByQuizzId?quizId=${quizzId}`);
+export const getQuestionsByQuizzId = async (quizId) => {
+  const { data } = await API.get(`/api/questions/getQuestionsByQuizzId?quizId=${quizId}`);
   return data;
 };
 
+
+export const saveQuestion = async (question) => {
+  const { data } = await API.post(`/api/questions/create`, question);
+  return data;
+}
+
+export const deleteQuestion = async (questionId) => {
+  const { data } = await API.delete(`/api/questions/delete?quesId=${questionId}`);
+  return data;
+}
+
+
+export const updateQuestion = async (question) => {
+  const { data } = await API.put(`/api/questions/update`, question);
+  return data;
+}

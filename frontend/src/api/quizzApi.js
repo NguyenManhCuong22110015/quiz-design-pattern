@@ -27,10 +27,7 @@ export async function getQuizzesByCategory(category) {
 }
 
 
-export async function uploadImage(data) {
-    const response = await API.post("api/quizzes/upload-image", data);
-    return response.data;
-}
+
 
 export async function createQuiz(data) {
     const response = await API.post("api/quizzes/create", data);
