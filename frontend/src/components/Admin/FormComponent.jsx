@@ -200,6 +200,7 @@ const FormComponent = ({ show, onClose, questionType, quantity, quizId, onSave }
           showSuccess("Image uploaded successfully");
         }
         question.mediaUrl = response.imageUrl;
+        question.mediaType = 'image';
       } 
       else if (question.mediaType === 'audio') {
         const formData = new FormData();
@@ -210,6 +211,7 @@ const FormComponent = ({ show, onClose, questionType, quantity, quizId, onSave }
             showSuccess("Image uploaded successfully");
           }
         question.mediaUrl = response.url;
+        question.mediaType = 'audio';
       } 
       else if (question.mediaType === 'video') {
         const formData = new FormData();
@@ -220,6 +222,7 @@ const FormComponent = ({ show, onClose, questionType, quantity, quizId, onSave }
             showSuccess("Image uploaded successfully");
           }
         question.mediaUrl = response.url;
+        question.mediaType = 'video';
         
       }
       

@@ -7,8 +7,8 @@ if (typeof window !== "undefined") {
   hatch.register();
   bouncy.register();
 }
-
-const CreateLoading = ({ isVisible = true }) => {
+const link = "https://res.cloudinary.com/dj9r2qksh/video/upload/v1742444295/Recording_2025-03-20_111752_ynsddt.mp4"
+const CreateLoading = ({ isVisible = true, videoSource = link }) => {
   // If not visible, don't render anything
   if (!isVisible) return null;
   
@@ -23,6 +23,20 @@ const CreateLoading = ({ isVisible = true }) => {
             color="white"
           ></l-bouncy>
           <p className="loading-text mt-3">Loading...</p>
+          
+          <div className="loading-video-container mt-3">
+            <video 
+              width="280" 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
+              className="loading-video"
+            >
+              <source src={videoSource} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
         </div>
       </div>
     </div>

@@ -7,8 +7,10 @@ import { uploadMedia } from '../../api/mediaApi';
 import { toast } from 'react-toastify';
 import CreateLoading from '../common/CreateLoading';
 import { ButtonGroup, Card, ProgressBar } from 'react-bootstrap';
+import { showSuccess } from '../common/Notification';
 
-const EditQuestionModal = ({ show, onClose, question, onUpdate }) => {
+// Đổi tham số từ onUpdate thành onSubmit cho rõ nghĩa
+const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
   const [formData, setFormData] = useState({
     text: '',
     description: '',
@@ -38,9 +40,9 @@ const EditQuestionModal = ({ show, onClose, question, onUpdate }) => {
         required: question.required !== undefined ? question.required : true,
         options: question.options || [],
         type: question.type || '',
-        media: question.media || {
-          type: null,
-          url: '',
+        media: {
+          type: question.mediaType || null,
+          url: question.media || '',
           file: null
         }
       });
@@ -239,28 +241,23 @@ const EditQuestionModal = ({ show, onClose, question, onUpdate }) => {
 
       // Format data for API
       const updatedQuestion = {
-        question: formData.text,
+        id: question._id,
+        text: formData.text,
         description: formData.description,
         points: parseInt(formData.points),
         time: parseInt(formData.time),
         required: formData.required,
         options: formData.options,
         type: formData.type,
-        media: formData.media ? {
-          type: formData.media.type,
-          url: formData.media.url
-        } : null
+       
       };
 
-      // Call the API
-      const response = await updateQuestion(question._id, updatedQuestion);
+      const response = await updateQuestion(updatedQuestion);
       
-      // Notify success
-      toast.success('Question updated successfully');
+      showSuccess('Question updated successfully');
       
-      // Update parent component
-      if (onUpdate) {
-        onUpdate(response);
+      if (onSubmit) {
+        onSubmit(response);
       }
       
       // Close modal

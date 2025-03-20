@@ -2,20 +2,33 @@ import { useEffect, useState } from 'react'
 import NavBarLeft from '../../components/Admin/NavBarLeft'
 import '../../styles/Assessments.css'
 import NavBarTop from '../../components/Admin/NavBarTop'
-import { createQuiz, getQuizzesByUserId } from '../../api/quizzApi'
+import { createQuiz, getQuizzesByUserId, updateQuiz } from '../../api/quizzApi'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { Link } from 'react-router-dom'
 import AddQuizzModal from '../../components/Admin/AddQuizModal'
+import EditQuizModal from '../../components/Admin/EditQuizModal';
 import { showSuccess, showError } from "../../components/common/Notification";
+import { FcQuestions } from "react-icons/fc";
 
 const QuizzPage = () => {
 
   const [quizzes , setQuizzes] = useState([])
   const userId = JSON.parse(localStorage.getItem('user')).id || 1
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
 
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
+  const handleOpenEditModal = (quiz) => {
+    setSelectedQuiz(quiz);
+    setShowEditModal(true);
+  };
+  
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedQuiz(null);
+  };
   const handleSaveData = async (data) => {
     try {
       const userData = JSON.parse(localStorage.getItem('user'));
@@ -36,6 +49,26 @@ const QuizzPage = () => {
     } catch (error) {
       console.error('Error parsing user data:', error);
       showError('Failed to create quiz!');
+    }
+  };
+  const handleUpdateQuiz = async (quizId, formData) => {
+    try {
+      // const formDataObj = {};
+      // formData.forEach((value, key) => {
+      // formDataObj[key] = value;
+      // console.log("FormData as object:", formDataObj);
+
+
+      // });
+   
+      const response = await updateQuiz(quizId, formData);
+      window.location.reload();
+      showSuccess('Quiz updated successfully!');
+      return response.data;
+    } catch (error) {
+      console.error('Error updating quiz:', error);
+      showError('Failed to update quiz!');
+      throw error;
     }
   };
   const formatDate = (dateString) => {
@@ -136,6 +169,7 @@ const QuizzPage = () => {
         <th scope="col" width="120" className="text-center">Created at</th>
         <th scope="col" width="120" className="text-center">Updated</th>
         <th scope="col" width="160" className="text-center">Actions</th>
+        <th scope="col" width="160" className="text-center">Questions</th>
       </tr>
     </thead>
     <tbody>
@@ -160,12 +194,12 @@ const QuizzPage = () => {
             </td>
             <td className="text-center align-middle">
               <div className="btn-group" role="group">
-                <Link 
-                  to={`/admin/quizz/${quiz._id}`} 
+                <button 
+                  onClick={() => handleOpenEditModal(quiz)}
                   className="btn btn-outline-primary btn-sm me-2"
                 >
                   <i className="bi bi-pencil-square me-1"></i> Edit
-                </Link>
+                </button>
                 <ConfirmDialog
                   title="Bạn có chắc chắn muốn xóa?"
                   text="Hành động này không thể hoàn tác!"
@@ -176,6 +210,14 @@ const QuizzPage = () => {
                   buttonText="Delete"
                 />
               </div>
+            </td>
+            <td>
+            <Link 
+                  to={`/admin/quizz/${quiz._id}`} 
+                  className="btn btn-outline-primary btn-sm me-2"
+                >
+                  <i className="bi bi-patch-question-fill me-1"></i> Go
+                </Link>
             </td>
           </tr>
         ))
@@ -196,6 +238,12 @@ const QuizzPage = () => {
         show={showModal}
         handleClose={handleCloseModal}
         onSave={handleSaveData}
+      />
+      <EditQuizModal
+        show={showEditModal}
+        handleClose={handleCloseEditModal}
+        quiz={selectedQuiz}
+        onUpdate={handleUpdateQuiz}
       />
     </>
   )

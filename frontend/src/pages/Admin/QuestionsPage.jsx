@@ -5,11 +5,13 @@ import NavBarTop from '../../components/Admin/NavBarTop'
 import AddQuestion from '../../components/Admin/AddQuestion'
 import EditQuestionModal from '../../components/Admin/EditQuestionModal'
 import { useParams } from 'react-router-dom'
-import { getQuestionsByQuizzId, deleteQuestion } from '../../api/questionApi' 
+import { getQuestionsByQuizzId, deleteQuestion,updateQuestion } from '../../api/questionApi' 
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { toast } from 'react-toastify'
 import { useNavigate } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
+import { IoReloadSharp } from "react-icons/io5";
+import { showSuccess } from '../../components/common/Notification'
 
 const QuestionsPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -106,10 +108,8 @@ const QuestionsPage = () => {
   };
 
   // Handle question update
-  const handleQuestionUpdate = (updatedQuestion) => {
-    setQuestions(questions.map(q => 
-      q._id === updatedQuestion._id ? updatedQuestion : q
-    ));
+  const handleQuestionUpdate = async () => {
+
   };
 
   // Handle add questions
@@ -145,7 +145,10 @@ const QuestionsPage = () => {
           <NavBarTop />
           <div className="container-fluid mt-3">
             <div className="d-flex justify-content-between align-items-center mb-4">
-            <button onClick={() => navigate(-1)}><BiArrowBack /></button>
+           <div>
+           <button onClick={() => navigate(-1)} className="me-2"><BiArrowBack/></button>
+           <button onClick={() =>  window.location.reload()}><IoReloadSharp /></button>
+           </div>
 
               <h3>
                 Questions 
@@ -264,7 +267,7 @@ const QuestionsPage = () => {
             show={showEditModal}
             onClose={() => setShowEditModal(false)}
             question={selectedQuestion}
-            onUpdate={handleQuestionUpdate}
+            onSubmit={handleQuestionUpdate}
           />
         )}
     </div>

@@ -33,3 +33,8 @@ export async function createQuiz(data) {
     const response = await API.post("api/quizzes/create", data);
     return response.data;
 }
+
+export async function updateQuiz(quizId, data) {
+    const response = await API.put(`api/quizzes/update/${quizId}`, data);   
+    return response.data;
+}

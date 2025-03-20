@@ -77,3 +77,17 @@
     opacity: 1;
   }
 }
+
+
+.loading-video-container {
+  max-width: 280px;
+  margin-top: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.loading-video {
+  width: 100%;
+  display: block;
+}
