@@ -22,6 +22,7 @@ import AuthMiddleware from './middleware/AuthMiddleware';
 import PlayPage from './pages/PlayPage'
 import ProfilePage from './pages/ProfilePage'
 import ManagePage from './pages/ManagePage'
+import GenerateQuiz from './pages/GenerateQuiz'
 
 
 const globalStyles = {
@@ -57,6 +58,7 @@ function App() {
               <Route path="/play/:id" element={<PlayPage/>} />
               <Route path="/profile" element={<ProfilePage/>} />
               <Route path="/manage" element={<ManagePage/>} />
+              <Route path="/generate" element={<GenerateQuiz/>} />
           </Routes>
       </Router>
     </main>

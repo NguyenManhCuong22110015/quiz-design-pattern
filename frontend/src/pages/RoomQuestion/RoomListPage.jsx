@@ -88,7 +88,7 @@ const RoomListPage = () => {
     };
     return (
 
-        <div className="container mt-5">
+        <div className="container mt-5 " style={{height:"100vh"}}>
              <Navbar/>
             <div className="row">
                 <div className="col-12 ">

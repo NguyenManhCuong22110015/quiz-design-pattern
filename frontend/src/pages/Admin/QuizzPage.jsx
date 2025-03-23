@@ -145,12 +145,12 @@ const QuizzPage = () => {
   };
   return (
     <>
-      <div className='sidebar'>
+      <div className='sidebar admin-layout'>
         <NavBarLeft />
       </div>
       <div className='home-section mt-5'>
         <NavBarTop />
-        <div className="container-fluid">
+        <div className="container-fluid admin-content">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h3 className="m-0">Quizzes</h3>
             <button className="btn btn-success" onClick={handleOpenModal}>

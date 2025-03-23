@@ -12,7 +12,7 @@ export default function QuizApp() {
      
       <section className="quiz-section d-flex justify-content-between mt-4">
         <div className="quiz-card d-flex align-items-center">
-          <img src="https://placehold.co/200x150/png?text=Quiz+Image" alt="Cartoon character writing a quiz" />
+          <img src="https://res.cloudinary.com/dj9r2qksh/image/upload/v1742653932/t%E1%BA%A3i_xu%E1%BB%91ng_3_zvawkz.png" alt="Cartoon character writing a quiz" />
           <div className="content d-flex flex-column align-items-center text-center">
             <h2>Create a quiz</h2>
             <p>Play for free with 300 participants</p>
@@ -20,11 +20,11 @@ export default function QuizApp() {
           </div>
         </div>
         <div className="quiz-card d-flex align-items-center">
-          <img src="https://placehold.co/200x150/png?text=AI+Image" alt="Cartoon character pointing" />
+          <img src="https://res.cloudinary.com/dj9r2qksh/image/upload/v1742653847/t%E1%BA%A3i_xu%E1%BB%91ng_8_z5se6b.jpg" alt="Cartoon character pointing" />
           <div className="content d-flex flex-column align-items-center text-center">
             <h2>A.I.</h2>
             <p>Generate a quiz from any subject or pdf</p>
-            <Link className="btn btn-info text-dark">Quiz generator</Link>
+            <Link  to="/generate" className="btn btn-info text-dark">Quiz generator</Link>
           </div>
         </div>
       </section>

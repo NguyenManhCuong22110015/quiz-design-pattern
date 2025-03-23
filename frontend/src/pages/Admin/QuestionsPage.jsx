@@ -138,12 +138,12 @@ const QuestionsPage = () => {
 
   return (
     <div className="wrapper">
-      <div className='sidebar'>
+      <div className='sidebar admin-layout'>
         <NavBar />
       </div>
       <div className='home-section'>
           <NavBarTop />
-          <div className="container-fluid mt-3">
+          <div className="container-fluid mt-5 admin-content" >
             <div className="d-flex justify-content-between align-items-center mb-4">
            <div>
            <button onClick={() => navigate(-1)} className="me-2"><BiArrowBack/></button>

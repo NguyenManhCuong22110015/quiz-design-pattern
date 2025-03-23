@@ -40,7 +40,6 @@ const MainPage = () => {
     <div className="container">
       <Navbar/>
       <div className="container d-flex align-items-center justify-content-center" style={{ minHeight: "60vh" }}>
-        
       <ChoiceType />      
       </div>
       <div>

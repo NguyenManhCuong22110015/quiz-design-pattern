@@ -38,3 +38,19 @@ export async function updateQuiz(quizId, data) {
     const response = await API.put(`api/quizzes/update/${quizId}`, data);   
     return response.data;
 }
+
+
+export async function generateQuizzes(prompt){
+    const response = await API.post("api/quizzes/generate", {prompt});
+    return response.data;
+}
+
+
+export async function generateQuizzesByPDF(pdf){
+    const response = await API.post("api/quizzes/generate-quizzes-by-pdf",pdf);
+    return response.data;
+}
+
+export async function saveQuestionsToQuiz(){
+    
+}   
