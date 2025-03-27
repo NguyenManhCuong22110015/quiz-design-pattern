@@ -5,6 +5,12 @@ export async function getQuizzesByUserId(userId) {
     return response.data;
 };
 
+export async function getQuizById(id) {
+    const response = await API.get("api/quizzes/getById?id=" + id);
+    return response.data;
+};
+
+
 export async function getAllQuizzes(userId) {
     const response = await API.get("api/quizzes/getAll?userId=" + userId);
     return response.data;
@@ -51,6 +57,7 @@ export async function generateQuizzesByPDF(pdf){
     return response.data;
 }
 
-export async function saveQuestionsToQuiz(){
-    
+export async function saveQuestionsToQuiz(quizId, allQuestions){
+    const response = await API.put(`api/quizzes/save-questions/${quizId}`, {allQuestions});
+    return response.data;
 }   

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import "../styles/GenerateQuiz.css";
-import { generateQuizzes, generateQuizzesByPDF, getAllQuizzes, saveQuestionsToQuiz } from '../api/quizzApi';
+import { generateQuizzes, generateQuizzesByPDF, getAllQuizzes, getQuizzesByUserId, saveQuestionsToQuiz } from '../api/quizzApi';
 import QuestionPreviewCard from '../components/Questions/QuestionPreviewCard';
 import { Container, Row, Col, Button, Spinner, Modal, Form, Alert, ListGroup } from 'react-bootstrap';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,14 +16,21 @@ const GenerateQuiz = () => {
   const [questionType, setQuestionType] = useState("True / False");
   const [questionCount, setQuestionCount] = useState("1 questions");
   const [difficulty, setDifficulty] = useState("Dễ");
+  
+  // Trạng thái loading riêng cho từng quá trình
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // State tổng hợp cho tất cả các hoạt động loading
+  const [isProcessing, setIsProcessing] = useState(false);
+  
   const [generatedQuestions, setGeneratedQuestions] = useState([]);
   const [error, setError] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [pdfFile, setPdfFile] = useState(null);
   const [uploadError, setUploadError] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const [pdfQuestions, setPdfQuestions] = useState([]);
   const [allQuestions, setAllQuestions] = useState([]);
@@ -31,8 +38,13 @@ const GenerateQuiz = () => {
   const [availableQuizzes, setAvailableQuizzes] = useState([]);
   const [selectedQuizId, setSelectedQuizId] = useState('');
   const [newQuizName, setNewQuizName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [createNewQuiz, setCreateNewQuiz] = useState(false);
+  const [topicImage, setTopicImage] = useState(null);
+  
+  // Cập nhật isProcessing khi bất kỳ trạng thái loading nào thay đổi
+  useEffect(() => {
+    setIsProcessing(isLoading || isUploading || isSaving);
+  }, [isLoading, isUploading, isSaving]);
   
   // Reset expanded card when question changes
   useEffect(() => {
@@ -53,7 +65,7 @@ const GenerateQuiz = () => {
   const fetchAvailableQuizzes = async () => {
     try {
       const userId = localStorage.getItem('userId');
-      const quizzes = await getAllQuizzes(userId);
+      const quizzes = await getQuizzesByUserId(userId);
       setAvailableQuizzes(quizzes);
       if (quizzes.length > 0) {
         setSelectedQuizId(quizzes[0]._id);
@@ -71,6 +83,7 @@ const GenerateQuiz = () => {
     }
     
     setGeneratedQuestions([]);
+    setTopicImage(null); // Reset hình ảnh
     setIsLoading(true);
     setError(null);
     
@@ -81,38 +94,23 @@ const GenerateQuiz = () => {
       const response = await generateQuizzes(prompt);
       console.log("Received response:", response);
       
-      // Kiểm tra nếu response là array
-      if (Array.isArray(response)) {
+      // Lưu hình ảnh nếu có
+      if (response.topicImage && response.topicImage.url) {
+        setTopicImage(response.topicImage.url);
+      }
+      
+      // Kiểm tra nếu response.questions là array
+      if (response.questions && Array.isArray(response.questions)) {
+        setGeneratedQuestions(response.questions);
+        console.log(`Generated ${response.questions.length} questions`);
+      }
+      // Trường hợp nhận trực tiếp mảng câu hỏi (legacy)
+      else if (Array.isArray(response)) {
         setGeneratedQuestions(response);
         console.log(`Generated ${response.length} questions`);
-      } 
-      // Nếu là string, thử parse JSON
-      else if (typeof response === 'string') {
-        try {
-          // Tìm và trích xuất mảng JSON từ kết quả
-          const jsonMatch = response.match(/\[[\s\S]*\]/);
-          if (jsonMatch) {
-            const parsedQuestions = JSON.parse(jsonMatch[0]);
-            setGeneratedQuestions(parsedQuestions);
-            console.log(`Parsed ${parsedQuestions.length} questions`);
-          } else {
-            setError("Không thể tìm thấy mảng câu hỏi trong kết quả");
-          }
-        } catch (parseError) {
-          console.error("Error parsing response:", parseError);
-          setError("Lỗi khi xử lý kết quả từ AI");
-        }
       }
-      // Nếu là object với mảng questions
-      else if (response && response.questions && Array.isArray(response.questions)) {
-        setGeneratedQuestions(response.questions);
-        console.log(`Found ${response.questions.length} questions in response object`);
-      }
-      // Trường hợp không xác định được dạng dữ liệu
-      else {
-        console.error("Unknown response format:", response);
-        setError("Định dạng phản hồi không hợp lệ");
-      }
+      // Còn lại xử lý như cũ
+      // ...
     } catch (error) {
       console.error("API Error:", error);
       setError("Đã xảy ra lỗi khi tạo quiz");
@@ -207,21 +205,21 @@ const GenerateQuiz = () => {
     
     try {
       let quizId = selectedQuizId;
+      console.log("All QS" +  allQuestions)
+      const response = await saveQuestionsToQuiz(quizId, allQuestions);
       
-      alert("quizId: " + quizId);
-
-      await saveQuestionsToQuiz(quizId, allQuestions);
-      
-      showSuccess("Đã lưu câu hỏi vào quiz thành công");
-      setShowSaveModal(false);
-      
-      // Optional: Clear all questions after saving
-      // setGeneratedQuestions([]);
-      // setPdfQuestions([]);
+      if (response && response.message === 'Questions saved successfully') {
+        showSuccess("Đã lưu câu hỏi vào quiz thành công");
+        setShowSaveModal(false);
+      } else {
+        toast.warning("Lưu không thành công, vui lòng thử lại");
+      }
     } catch (error) {
       console.error("Failed to save quiz:", error);
       toast.error("Không thể lưu quiz. Vui lòng thử lại sau.");
     } finally {
+      // Đảm bảo luôn set isSaving về false ở cuối cùng
+      console.log("Setting isSaving to false");
       setIsSaving(false);
     }
   };
@@ -322,8 +320,8 @@ const GenerateQuiz = () => {
       
       <div className="fixed-corner-icon">
         <a href="/" ><i className="fas fa-robot"></i></a>
-        
       </div>
+      
       <Container>
         <h1 className="text-center mb-4">A.I. Quiz Generator</h1>
         <p className="text-center mb-4">Type a subject to generate a quiz</p>
@@ -383,27 +381,26 @@ const GenerateQuiz = () => {
         </div>
         
         <div className="generate-button-container text-center mb-4">
-            <Button 
-              variant="danger" 
-              size="lg" 
-              className="generate-button"
-              onClick={handleGenerate}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  Generating...
-                  <CreateLoading/>
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-bolt me-2"></i>
-                  Generate Quiz
-                </>
-              )}
-            </Button>
-          </div>
+          <Button 
+            variant="danger" 
+            size="lg" 
+            className="generate-button"
+            onClick={handleGenerate}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-bolt me-2"></i>
+                Generate Quiz
+              </>
+            )}
+          </Button>
+        </div>
         
         {error && (
           <Alert variant="danger" className="text-center">
@@ -421,6 +418,18 @@ const GenerateQuiz = () => {
                 Save Quiz
               </Button>
             </div>
+            
+            {/* Hiển thị hình ảnh chủ đề nếu có */}
+            {topicImage && (
+              <div className="topic-image-container mb-4 text-center">
+                <img 
+                  src={topicImage} 
+                  alt={subject}
+                  className="topic-image img-fluid rounded"
+                  style={{ maxHeight: '250px' }}
+                />
+              </div>
+            )}
             
             <Row className="questions-grid">
               <AnimatePresence>
@@ -443,6 +452,7 @@ const GenerateQuiz = () => {
                         onToggleExpand={() => toggleCardExpand(index)}
                         onUpdate={(updatedQuestion) => handleQuestionUpdate(index, updatedQuestion)}
                         onDelete={() => handleDeleteQuestion(index)}
+                        topicImage={topicImage}
                       />
                     </motion.div>
                   </Col>
@@ -498,7 +508,7 @@ const GenerateQuiz = () => {
         {/* Upload PDF section */}
         <div className="upload-section mt-5 text-center">
           <p>
-            <img src="https://placehold.co/20x20/png" alt="PDF icon" className="me-2"/>
+            <FaFilePdf className="me-2" style={{ fontSize: '1.2rem', color: '#dc3545' }} />
             <a href="#" onClick={handleShowUploadModal}>
               Upload a PDF
               <span className="d-none d-md-inline"> and select questions generated by AI based on your content</span>
@@ -657,16 +667,9 @@ const GenerateQuiz = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-      {isLoading ? (
-                <>
-                 
-                  <CreateLoading/>
-                </>
-              ) : (
-                <>
-                
-                </>
-              )}
+      
+      {/* CreateLoading component sẽ hiển thị khi bất kỳ quá trình xử lý nào đang diễn ra */}
+      {isProcessing && <CreateLoading />}
     </div>
   );
 };

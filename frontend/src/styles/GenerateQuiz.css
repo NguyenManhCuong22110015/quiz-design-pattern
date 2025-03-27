@@ -113,8 +113,10 @@ body  {
     }
 
     .generate-quiz .options select {
-        width: 80%;
+        width: 100%;
         margin-bottom: 10px;
+        flex-direction: column;
+        align-items: center;
     }
 }
 
@@ -422,4 +424,30 @@ body  {
   height: 100%;
   background-color: #17a2b8;
   border-radius: 5px 0 0 5px;
+}
+
+/* QuestionPreviewCard.css */
+.card-image-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-top: -10px;
+  margin-bottom: 15px;
+  max-height: 150px;
+}
+
+.card-image {
+  width: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.card-image:hover {
+  transform: scale(1.05);
+}
+
+/* Khi card được mở rộng */
+.expanded .card-image-container {
+  max-height: 250px;
+  margin: 0 0 20px;
 }

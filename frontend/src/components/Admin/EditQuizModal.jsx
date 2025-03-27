@@ -110,17 +110,15 @@ const EditQuizModal = ({ show, handleClose, quiz, onUpdate }) => {
     try {
       setIsLoading(true);
       
-      // Create form data for submission
       let imageUrl = null;
     if (formData.image) {
       const imageFormData = new FormData();
       imageFormData.append('image', formData.image);
       
-      // Giả sử bạn có API riêng để upload ảnh
       const uploadResponse = await uploadImage(imageFormData);
       imageUrl = uploadResponse.imageUrl;
     }
-    
+   
     // Sau đó gửi dữ liệu dưới dạng JSON thông thường
     const submitData = {
       title: formData.title,
@@ -133,7 +131,6 @@ const EditQuizModal = ({ show, handleClose, quiz, onUpdate }) => {
    
 
       await onUpdate(quiz._id, submitData);
-      
       handleClose();
       toast.success('Quiz updated successfully!');
     } catch (error) {

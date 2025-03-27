@@ -33,7 +33,7 @@ const QuizzCard = ({ quiz }) => {
     return stars
   }
   return (
-    <Link to={`/play/${mockQuiz._id}`}  className="text-decoration-none">
+    <Link to={`/quiz-detail/${mockQuiz._id}`}  className="text-decoration-none">
     <Card className="quiz-card h-100 shadow-sm border-0 rounded-4 overflow-hidden" style={{ 
       transition: 'transform 0.3s ease, box-shadow 0.3s ease',
       cursor: 'pointer'

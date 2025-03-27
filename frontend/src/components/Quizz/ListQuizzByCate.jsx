@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
@@ -15,7 +15,26 @@ const ListQuizzByCate = ({category}) => {
   
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const quizzesPerPage = 4; // Display 4 quizzes per row/page
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Responsive quizzes per page - keep 1 for mobile
+  const quizzesPerPage = isMobile ? 1 : 4;
+
+  // Check screen width on mount and resize
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Check initially
+    checkIsMobile();
+    
+    // Add event listener
+    window.addEventListener('resize', checkIsMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Fetch quizzes data for the category
   useEffect(() => {
@@ -112,19 +131,12 @@ const ListQuizzByCate = ({category}) => {
             borderRadius: '2px'
           }}></div>
         </h3>
-
-        {/* Add corner navigation buttons */}
-        {!loading && totalPages > 1 && (
-          <div className="d-flex">
-           
-          </div>
-        )}
       </div>
 
       {/* Carousel Container */}
-      <div className="carousel-container position-relative" style={{ padding: '0 60px' }}>
-        {/* Side Navigation Buttons */}
-        {!loading && totalPages > 1 && (
+      <div className="carousel-container position-relative" style={{ padding: isMobile ? '0' : '0 60px' }}>
+        {/* Side Navigation Buttons - Hide on mobile */}
+        {!isMobile && !loading && totalPages > 1 && (
           <>
             <Button 
               onClick={goToPrevPage}
@@ -146,9 +158,8 @@ const ListQuizzByCate = ({category}) => {
           </>
         )}
         
-        {/* Quizzes Carousel - keep existing content */}
+        {/* Quizzes Carousel */}
         <AnimatePresence initial={false} mode="wait">
-          {/* Keep the existing motion.div and its children */}
           <motion.div
             key={currentPage}
             variants={variants}
@@ -162,14 +173,20 @@ const ListQuizzByCate = ({category}) => {
               damping: 30
             }}
           >
-            <Row className="px-2">
+            <Row className={isMobile ? "px-0" : "px-2"}>
               {loading ? (
                 <Col className="text-center py-4">
                   <p>Loading quizzes...</p>
                 </Col>
               ) : categoryData.quizzes.length > 0 ? (
                 getCurrentPageQuizzes().map((quiz) => (
-                  <Col key={quiz._id || quiz.id} xs={12} sm={6} md={3} className="mb-4 px-2">
+                  <Col 
+                    key={quiz._id || quiz.id} 
+                    xs={12} 
+                    md={3} 
+                    className={`mb-4 ${isMobile ? 'px-0' : 'px-2'}`}
+                    style={{ maxWidth: isMobile ? '100%' : null }}
+                  >
                     <QuizzCard quiz={quiz} />
                   </Col>
                 ))
@@ -183,7 +200,7 @@ const ListQuizzByCate = ({category}) => {
         </AnimatePresence>
       </div>
       
-      {/* Bottom navigation controls */}
+      {/* Bottom navigation controls - Hide buttons on mobile, keep dots */}
       {!loading && totalPages > 1 && (
         <div className="d-flex flex-column align-items-center mt-4">
           {/* Pagination Indicators */}
@@ -195,8 +212,8 @@ const ListQuizzByCate = ({category}) => {
                 aria-label={`Go to page ${index + 1}`}
                 onClick={() => setCurrentPage(index)}
                 style={{
-                  width: '12px',
-                  height: '12px',
+                  width: isMobile ? '15px' : '12px',
+                  height: isMobile ? '15px' : '12px',
                   borderRadius: '50%',
                   margin: '0 5px',
                   background: currentPage === index ? '#3F51B5' : '#d1d1d1',
@@ -209,24 +226,26 @@ const ListQuizzByCate = ({category}) => {
             ))}
           </div>
           
-          {/* Add bottom navigation buttons */}
-          <div className="d-flex mt-3">
-            <Button
-              variant="outline-primary"
-              onClick={goToPrevPage}
-              className="me-2"
-              size="sm"
-            >
-              <FaChevronLeft /> Previous
-            </Button>
-            <Button
-              variant="outline-primary"
-              onClick={goToNextPage}
-              size="sm"
-            >
-              Next <FaChevronRight />
-            </Button>
-          </div>
+          {/* Add bottom navigation buttons - Hide on mobile */}
+          {!isMobile && (
+            <div className="d-flex mt-3">
+              <Button
+                variant="outline-primary"
+                onClick={goToPrevPage}
+                className="me-2"
+                size="sm"
+              >
+                <FaChevronLeft /> Previous
+              </Button>
+              <Button
+                variant="outline-primary"
+                onClick={goToNextPage}
+                size="sm"
+              >
+                Next <FaChevronRight />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Container>

@@ -3,13 +3,26 @@ import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import { updateQuestion } from '../../api/questionApi';
-import { uploadMedia } from '../../api/mediaApi'; 
+import { uploadMedia, uploadImage, uploadVideo, uploadAudio } from '../../api/mediaApi'; 
 import { toast } from 'react-toastify';
 import CreateLoading from '../common/CreateLoading';
-import { ButtonGroup, Card, ProgressBar } from 'react-bootstrap';
-import { showSuccess } from '../common/Notification';
+import { ButtonGroup, Card, ProgressBar, Row, Col } from 'react-bootstrap';
+import { showSuccess, showError } from '../common/Notification';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { 
+  faQuestionCircle, 
+  faGripVertical, 
+  faMinusCircle, 
+  faPlusCircle, 
+  faSave, 
+  faImage,
+  faMusic,
+  faVideo,
+  faUpload,
+  faTrash,
+  faCheck
+} from "@fortawesome/free-solid-svg-icons";
 
-// Đổi tham số từ onUpdate thành onSubmit cho rõ nghĩa
 const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
   const [formData, setFormData] = useState({
     text: '',
@@ -23,8 +36,11 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
       type: null, // 'image', 'audio', or 'video'
       url: '',
       file: null
-    }
+    },
+    sort: 'alphabetical',       // How to sort options: 'alphabetical' or 'custom'
+    layout: 'radio_buttons',    // How to display options: 'radio_buttons', 'checkboxes', or 'dropdown'
   });
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -44,7 +60,9 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
           type: question.mediaType || null,
           url: question.media || '',
           file: null
-        }
+        },
+        sort: question.sort || 'alphabetical',
+        layout: question.layout || (question.type === 'multiple' ? 'checkboxes' : 'radio_buttons')
       });
     }
   }, [question]);
@@ -87,14 +105,35 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
   };
 
   const handleRemoveOption = (index) => {
+    // Don't allow removing if there are fewer than 2 options
+    if (formData.options.length <= 2) {
+      toast.warning("A question must have at least 2 options");
+      return;
+    }
+    
     const newOptions = formData.options.filter((_, i) => i !== index);
     setFormData({ ...formData, options: newOptions });
   };
 
   // Handle media type selection
   const handleMediaTypeSelect = (mediaType) => {
-    // If selecting the same media type that's already active, do nothing
-    if (formData.media.type === mediaType) return;
+    // If selecting the same media type that's already active, clear it
+    if (formData.media.type === mediaType) {
+      setFormData({
+        ...formData,
+        media: {
+          type: null,
+          url: '',
+          file: null
+        }
+      });
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
     
     // Clear any existing media when changing types
     setFormData({
@@ -113,7 +152,7 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
   };
 
   // Handle media file selection
-  const handleMediaFileChange = async (e) => {
+  const handleMediaFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
@@ -152,53 +191,6 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
         url: URL.createObjectURL(file) // Create local URL for preview
       }
     });
-    
-    try {
-      // Start upload immediately
-      setIsUploading(true);
-      setUploadProgress(0);
-      
-      // Create form data for upload
-      const mediaFormData = new FormData();
-      mediaFormData.append('file', file);
-      mediaFormData.append('type', mediaType);
-      
-      // Call API to upload media
-      const response = await uploadMedia(mediaFormData, (progressEvent) => {
-        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        setUploadProgress(progress);
-      });
-      
-      // Update state with the server URL
-      setFormData(prevState => ({
-        ...prevState,
-        media: {
-          ...prevState.media,
-          url: response.url // Use the URL returned from server
-        }
-      }));
-      
-      toast.success('Media uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading media:', error);
-      toast.error('Failed to upload media. Please try again.');
-      
-      // Reset media on error
-      setFormData(prevState => ({
-        ...prevState,
-        media: {
-          ...prevState.media,
-          file: null,
-          url: ''
-        }
-      }));
-      
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   // Clear media
@@ -215,6 +207,88 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  // Media upload function
+  const handleMediaUpload = async () => {
+    if (!formData.media.file) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    try {
+      let response;
+      const mediaFormData = new FormData();
+      
+      if (formData.media.type === 'image') {
+        mediaFormData.append('image', formData.media.file);
+        response = await uploadImage(mediaFormData, (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(progress);
+        });
+        
+        if (response && response.imageUrl) {
+          setFormData({
+            ...formData,
+            media: {
+              ...formData.media,
+              url: response.imageUrl
+            }
+          });
+          showSuccess("Image uploaded successfully");
+        } else {
+          throw new Error("Failed to get image URL from response");
+        }
+      } 
+      else if (formData.media.type === 'audio') {
+        mediaFormData.append('audio', formData.media.file);
+        response = await uploadAudio(mediaFormData, (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(progress);
+        });
+        
+        if (response && response.url) {
+          setFormData({
+            ...formData,
+            media: {
+              ...formData.media,
+              url: response.url
+            }
+          });
+          showSuccess("Audio uploaded successfully");
+        } else {
+          throw new Error("Failed to get audio URL from response");
+        }
+      } 
+      else if (formData.media.type === 'video') {
+        mediaFormData.append('video', formData.media.file);
+        response = await uploadVideo(mediaFormData, (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(progress);
+        });
+        
+        if (response && response.url) {
+          setFormData({
+            ...formData,
+            media: {
+              ...formData.media,
+              url: response.url
+            }
+          });
+          showSuccess("Video uploaded successfully");
+        } else {
+          throw new Error("Failed to get video URL from response");
+        }
+      }
+    } catch (error) {
+      console.error("Error uploading media:", error);
+      showError(`Failed to upload ${formData.media.type}. Please try again.`);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -249,12 +323,15 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
         required: formData.required,
         options: formData.options,
         type: formData.type,
-       
+        media: formData.media.url,
+        mediaType: formData.media.type,
+        sort: formData.sort,
+        layout: formData.layout
       };
 
       const response = await updateQuestion(updatedQuestion);
       
-      showSuccess('Question updated successfully');
+      showSuccess('Question updated successfully!');
       
       if (onSubmit) {
         onSubmit(response);
@@ -279,59 +356,71 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
       return (
         <Form.Group className="mb-3">
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <Form.Label>Answer Options</Form.Label>
+            <Form.Label>Answer Options <span className="text-danger">*</span></Form.Label>
             {formData.type !== 'boolean' && (
               <Button 
                 size="sm" 
                 variant="outline-success" 
                 onClick={handleAddOption}
               >
-                <i className="bi bi-plus-circle me-1"></i> Add Option
+                <FontAwesomeIcon icon={faPlusCircle} className="me-1" /> Add Option
               </Button>
             )}
           </div>
           
-          {formData.options.map((option, index) => (
-            <div className="d-flex align-items-center mb-2" key={index}>
-              <div className="me-2">
-                {formData.type === 'multiple' ? (
-                  <Form.Check 
-                    type="checkbox"
-                    checked={option.isCorrect}
-                    onChange={() => handleIsCorrectChange(index)}
-                    id={`option-correct-${index}`}
-                  />
-                ) : (
-                  <Form.Check 
-                    type="radio"
-                    name="correctOption"
-                    checked={option.isCorrect}
-                    onChange={() => handleIsCorrectChange(index)}
-                    id={`option-correct-${index}`}
-                  />
+          <div className="border rounded p-3 bg-light">
+            {formData.options.map((option, index) => (
+              <div className="d-flex align-items-center mb-2" key={index}>
+                <div className="me-2">
+                  {formData.type === 'multiple' ? (
+                    <Form.Check 
+                      type="checkbox"
+                      checked={option.isCorrect}
+                      onChange={() => handleIsCorrectChange(index)}
+                      id={`option-correct-${index}`}
+                    />
+                  ) : (
+                    <Form.Check 
+                      type="radio"
+                      name="correctOption"
+                      checked={option.isCorrect}
+                      onChange={() => handleIsCorrectChange(index)}
+                      id={`option-correct-${index}`}
+                    />
+                  )}
+                </div>
+                
+                <div className="me-2">
+                  <FontAwesomeIcon icon={faGripVertical} className="text-muted" />
+                </div>
+                
+                <Form.Control
+                  type="text"
+                  value={option.option}
+                  onChange={(e) => handleOptionTextChange(index, e.target.value)}
+                  placeholder={`Option ${index + 1}`}
+                  disabled={formData.type === 'boolean'}
+                  className="me-2"
+                />
+                
+                {formData.type !== 'boolean' && formData.options.length > 2 && (
+                  <Button 
+                    variant="outline-danger" 
+                    size="sm" 
+                    onClick={() => handleRemoveOption(index)}
+                  >
+                    <FontAwesomeIcon icon={faMinusCircle} />
+                  </Button>
                 )}
               </div>
-              
-              <Form.Control
-                type="text"
-                value={option.option}
-                onChange={(e) => handleOptionTextChange(index, e.target.value)}
-                placeholder={`Option ${index + 1}`}
-                disabled={formData.type === 'boolean'}
-                className="me-2"
-              />
-              
-              {formData.type !== 'boolean' && formData.options.length > 2 && (
-                <Button 
-                  variant="outline-danger" 
-                  size="sm" 
-                  onClick={() => handleRemoveOption(index)}
-                >
-                  <i className="bi bi-trash"></i>
-                </Button>
-              )}
+            ))}
+            
+            <div className="mt-2 text-center text-muted small">
+              {formData.type === 'multiple' 
+                ? "✓ Select all correct answers" 
+                : "○ Select the single correct answer"}
             </div>
-          ))}
+          </div>
         </Form.Group>
       );
     }
@@ -339,7 +428,15 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
     if (formData.type === 'number') {
       return (
         <div className="alert alert-info">
-          This is a number response question. Students will enter a numeric value.
+          <div className="d-flex align-items-center">
+            <FontAwesomeIcon icon={faQuestionCircle} className="me-2" size="lg" />
+            <div>
+              <h5 className="mb-1">Number Response Question</h5>
+              <p className="mb-0">
+                Students will enter a numeric value as their answer. You can specify the correct number(s) in the options.
+              </p>
+            </div>
+          </div>
         </div>
       );
     }
@@ -347,7 +444,15 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
     if (formData.type === 'text') {
       return (
         <div className="alert alert-info">
-          This is a text response question. Students will enter free-form text.
+          <div className="d-flex align-items-center">
+            <FontAwesomeIcon icon={faQuestionCircle} className="me-2" size="lg" />
+            <div>
+              <h5 className="mb-1">Text Response Question</h5>
+              <p className="mb-0">
+                Students will enter free-form text as their answer. You can specify acceptable answers in the options.
+              </p>
+            </div>
+          </div>
         </div>
       );
     }
@@ -368,6 +473,11 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
             src={media.url} 
             style={{ maxHeight: '200px', objectFit: 'contain' }} 
           />
+          <Card.Footer className="text-center bg-light">
+            <small className="text-success">
+              <FontAwesomeIcon icon={faCheck} className="me-1" /> Image uploaded
+            </small>
+          </Card.Footer>
         </Card>
       );
     }
@@ -381,6 +491,11 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
               Your browser does not support the audio element.
             </audio>
           </Card.Body>
+          <Card.Footer className="text-center bg-light">
+            <small className="text-success">
+              <FontAwesomeIcon icon={faCheck} className="me-1" /> Audio uploaded
+            </small>
+          </Card.Footer>
         </Card>
       );
     }
@@ -394,12 +509,20 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
               Your browser does not support the video element.
             </video>
           </Card.Body>
+          <Card.Footer className="text-center bg-light">
+            <small className="text-success">
+              <FontAwesomeIcon icon={faCheck} className="me-1" /> Video uploaded
+            </small>
+          </Card.Footer>
         </Card>
       );
     }
 
     return null;
   };
+
+  // Determine if options display settings should be shown
+  const showOptionsSettings = ['multiple', 'single'].includes(formData.type) && formData.options.length > 0;
 
   return (
     <>
@@ -411,6 +534,7 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Question Text <span className="text-danger">*</span></Form.Label>
+              <Form.Label className="text-danger">({formData.type} Question)</Form.Label>
               <Form.Control
                 type="text"
                 name="text"
@@ -444,25 +568,25 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
                       variant={formData.media.type === 'image' ? 'primary' : 'outline-primary'}
                       onClick={() => handleMediaTypeSelect('image')}
                     >
-                      <i className="bi bi-image me-1"></i> Image
+                      <FontAwesomeIcon icon={faImage} className="me-1" /> Image
                     </Button>
                     <Button
                       variant={formData.media.type === 'audio' ? 'primary' : 'outline-primary'}
                       onClick={() => handleMediaTypeSelect('audio')}
                     >
-                      <i className="bi bi-music-note-beamed me-1"></i> Audio
+                      <FontAwesomeIcon icon={faMusic} className="me-1" /> Audio
                     </Button>
                     <Button
                       variant={formData.media.type === 'video' ? 'primary' : 'outline-primary'}
                       onClick={() => handleMediaTypeSelect('video')}
                     >
-                      <i className="bi bi-camera-video me-1"></i> Video
+                      <FontAwesomeIcon icon={faVideo} className="me-1" /> Video
                     </Button>
                   </ButtonGroup>
                   
                   {formData.media.type && (
                     <>
-                      <div className="mb-3">
+                      <div className="d-flex mb-3">
                         <Form.Control
                           type="file"
                           ref={fileInputRef}
@@ -473,12 +597,26 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
                             'video/*'
                           }
                           disabled={isUploading}
+                          className="me-2"
                         />
-                        <Form.Text className="text-muted">
-                          {formData.media.type === 'image' ? 'Supported formats: JPG, PNG, GIF, WebP' :
-                           formData.media.type === 'audio' ? 'Supported formats: MP3, WAV, OGG' :
-                           'Supported formats: MP4, WebM, OGG'} (Max: 10MB)
-                        </Form.Text>
+                        
+                        <Button 
+                          variant="success" 
+                          onClick={handleMediaUpload}
+                          disabled={!formData.media.file || isUploading}
+                          className="d-flex align-items-center"
+                        >
+                          {isUploading ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <FontAwesomeIcon icon={faUpload} className="me-2" /> Upload
+                            </>
+                          )}
+                        </Button>
                       </div>
                       
                       {isUploading && (
@@ -502,8 +640,7 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
                             onClick={handleClearMedia}
                             disabled={isUploading}
                           >
-                            <i className="bi bi-x-circle me-1"></i>
-                            Clear Media
+                            <FontAwesomeIcon icon={faTrash} className="me-1" /> Clear Media
                           </Button>
                         </div>
                       )}
@@ -559,7 +696,76 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
             
             {renderTypeSpecificFields()}
             
-            <div className="d-flex justify-content-end">
+            {/* Options display settings */}
+            {showOptionsSettings && (
+              <Row className="mt-4 mb-3">
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Sort Options</Form.Label>
+                    <div>
+                      <Form.Check
+                        type="radio"
+                        name="sort"
+                        id="sort-alpha"
+                        label="Alphabetical"
+                        checked={formData.sort === "alphabetical"}
+                        onChange={() => setFormData({...formData, sort: 'alphabetical'})}
+                        inline
+                      />
+                      <Form.Check
+                        type="radio"
+                        name="sort"
+                        id="sort-custom"
+                        label="Custom Order"
+                        checked={formData.sort === "custom"}
+                        onChange={() => setFormData({...formData, sort: 'custom'})}
+                        inline
+                      />
+                    </div>
+                  </Form.Group>
+                </Col>
+                
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Display Layout</Form.Label>
+                    <div>
+                      {formData.type === 'multiple' ? (
+                        <Form.Check
+                          type="radio"
+                          name="layout"
+                          id="layout-checkboxes"
+                          label="Checkboxes"
+                          checked={formData.layout === "checkboxes"}
+                          onChange={() => setFormData({...formData, layout: 'checkboxes'})}
+                          inline
+                        />
+                      ) : (
+                        <Form.Check
+                          type="radio"
+                          name="layout"
+                          id="layout-radio"
+                          label="Radio Buttons"
+                          checked={formData.layout === "radio_buttons"}
+                          onChange={() => setFormData({...formData, layout: 'radio_buttons'})}
+                          inline
+                        />
+                      )}
+                      <Form.Check
+                        type="radio"
+                        name="layout"
+                        id="layout-dropdown"
+                        label="Dropdown"
+                        checked={formData.layout === "dropdown"}
+                        onChange={() => setFormData({...formData, layout: 'dropdown'})}
+                        inline
+                      />
+                    </div>
+                  </Form.Group>
+                </Col>
+              </Row>
+            )}
+            
+            <div className="d-flex justify-content-end mt-4"></div>
               <Button variant="secondary" onClick={onClose} className="me-2">
                 Cancel
               </Button>
@@ -568,9 +774,19 @@ const EditQuestionModal = ({ show, onClose, question, onSubmit }) => {
                 type="submit" 
                 disabled={isSubmitting || isUploading}
               >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faSave} className="me-2" />
+                    Save Changes
+                  </>
+                )}
               </Button>
-            </div>
+            
           </Form>
         </Modal.Body>
       </Modal>

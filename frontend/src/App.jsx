@@ -23,6 +23,8 @@ import PlayPage from './pages/PlayPage'
 import ProfilePage from './pages/ProfilePage'
 import ManagePage from './pages/ManagePage'
 import GenerateQuiz from './pages/GenerateQuiz'
+import QuizDetail from './components/Quizz/QuizDetail'
+import AuthProvider from './contexts/AuthContext'
 
 
 const globalStyles = {
@@ -38,6 +40,7 @@ document.body.style.fontFamily = globalStyles.body.fontFamily
 
 function App() {
   return (
+    <AuthProvider>
     <main>
       <Router>
           <Routes>
@@ -55,13 +58,19 @@ function App() {
               <Route path="/room/list" element={<RoomListPage/>} />
               <Route path="/login" element={<LoginPage/>} />
               <Route path="/reset-password" element={<ResetPasswordPage/>} />
-              <Route path="/play/:id" element={<PlayPage/>} />
+              <Route path="/play/:id" element={
+                 <AuthMiddleware>
+                   <PlayPage/>
+                 </AuthMiddleware>
+                } />
+              <Route path="/quiz-detail/:id" element={<QuizDetail/>} />
               <Route path="/profile" element={<ProfilePage/>} />
               <Route path="/manage" element={<ManagePage/>} />
               <Route path="/generate" element={<GenerateQuiz/>} />
           </Routes>
       </Router>
     </main>
+    </AuthProvider> 
   )
 }
 
