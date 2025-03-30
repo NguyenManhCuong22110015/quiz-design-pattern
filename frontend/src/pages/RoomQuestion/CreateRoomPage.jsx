@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createRoom } from '../../services/websocket';
 import { createRoom as creRoom } from '../../api/roomApi';
+import Footer from '../../components/common/Footer';
 const CreateRoomPage = () => {
     const [roomName, setRoomName] = useState('');
     const [password, setPassword] = useState('');
@@ -84,6 +85,7 @@ const CreateRoomPage = () => {
                     </button>
                 </form>
             </div>
+            <Footer/>
         </div>
     );
 };

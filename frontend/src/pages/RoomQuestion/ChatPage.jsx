@@ -16,6 +16,7 @@ import { MdSmartDisplay } from "react-icons/md";
 import { showSuccess, showError } from "../../components/common/Notification.js";
 import PlayGameModal from "../../components/RoomQuestion/PlayGameModal.jsx";
 import CreateLoading from "../../components/common/CreateLoading.jsx";
+import Footer from "../../components/common/Footer.jsx";
 const ChatPage = () => {
     const { roomId } = useParams();
     const [username, setUsername] = useState("");
@@ -393,6 +394,7 @@ const ChatPage = () => {
             onRestart={handleRestartGame}
 
             />}
+            <Footer/>
         </div>
     );
 };

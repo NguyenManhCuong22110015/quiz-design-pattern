@@ -25,6 +25,7 @@ import ManagePage from './pages/ManagePage'
 import GenerateQuiz from './pages/GenerateQuiz'
 import QuizDetailPage from './pages/QuizDetailPage'
 import AuthProvider from './contexts/AuthContext'
+import CategoryPage from './pages/Admin/CategoryPage'
 
 
 const globalStyles = {
@@ -54,6 +55,11 @@ function App() {
               <Route path="/admin/quizz" element={
                  <AuthMiddleware>
                  <Assessments/>
+               </AuthMiddleware>
+              } />
+               <Route path="/admin/category" element={
+                 <AuthMiddleware>
+                 <CategoryPage/>
                </AuthMiddleware>
               } />
               <Route path="/admin/quizz/:quizzId" element={

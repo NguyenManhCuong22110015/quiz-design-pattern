@@ -78,6 +78,13 @@ const NavBarLeft = () => {
           </a>
           <span className="tooltip">Quizzes</span>
         </li>
+        <li>
+          <a href="/admin/category" className={isLinkActive('/admin/category') ? 'active' : ''}>
+            <i className='bx bxs-archive'></i>
+            <span className="links_name">Category</span>
+          </a>
+          <span className="tooltip">Category</span>
+        </li>
       </ul>
     </div>
   );
