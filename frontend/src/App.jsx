@@ -23,7 +23,7 @@ import PlayPage from './pages/PlayPage'
 import ProfilePage from './pages/ProfilePage'
 import ManagePage from './pages/ManagePage'
 import GenerateQuiz from './pages/GenerateQuiz'
-import QuizDetail from './components/Quizz/QuizDetail'
+import QuizDetailPage from './pages/QuizDetailPage'
 import AuthProvider from './contexts/AuthContext'
 
 
@@ -46,9 +46,21 @@ function App() {
           <Routes>
               <Route path="/" element={<MainPage/>} />
               <Route path="/questions" element={<QuestionsPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/admin/quizz" element={<Assessments/>} />
-              <Route path="/admin/quizz/:quizzId" element={<QuestionPage/>} />
+              <Route path="/admin" element={
+                 <AuthMiddleware>
+                 <AdminPage/>
+               </AuthMiddleware>
+              } />
+              <Route path="/admin/quizz" element={
+                 <AuthMiddleware>
+                 <Assessments/>
+               </AuthMiddleware>
+              } />
+              <Route path="/admin/quizz/:quizzId" element={
+                 <AuthMiddleware>
+                 <QuestionPage/>
+               </AuthMiddleware>
+              } />
               <Route path="/room/:roomId" element={<ChatPage/>} />
               <Route path="/room/create" element={
                 <AuthMiddleware>
@@ -63,7 +75,7 @@ function App() {
                    <PlayPage/>
                  </AuthMiddleware>
                 } />
-              <Route path="/quiz-detail/:id" element={<QuizDetail/>} />
+              <Route path="/quiz-detail/:id" element={<QuizDetailPage/>} />
               <Route path="/profile" element={<ProfilePage/>} />
               <Route path="/manage" element={<ManagePage/>} />
               <Route path="/generate" element={<GenerateQuiz/>} />

@@ -125,4 +125,118 @@ color: black;
     margin-left: 10px;
   }
   
+  .footer {
+    background-color: #f8f9fa;
+    color: #212529;
+    font-size: 14px;
+    border-top: 1px solid #e9ecef;
+  }
   
+  .footer-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #2A626A;
+  }
+  
+  .footer-desc {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+  
+  .footer-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    color: #343a40;
+  }
+  
+  .footer-links {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  
+  .footer-links li {
+    margin-bottom: 0.75rem;
+  }
+  
+  .footer-links a {
+    color: #6c757d;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .footer-links a:hover {
+    color: #2A626A;
+    text-decoration: none;
+  }
+  
+  .footer-contact p {
+    margin-bottom: 0.5rem;
+    color: #6c757d;
+  }
+  
+  .footer-contact i {
+    margin-right: 8px;
+    color: #2A626A;
+  }
+  
+  .social-icons {
+    display: flex;
+    gap: 15px;
+    margin-top: 1rem;
+  }
+  
+  .social-icon {
+    font-size: 1.5rem;
+    color: #6c757d;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+  
+  .social-icon:hover {
+    color: #2A626A;
+    transform: translateY(-3px);
+  }
+  
+  .footer-divider {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border-top: 1px solid #e9ecef;
+  }
+  
+  .footer-bottom {
+    padding-top: 1rem;
+  }
+  
+  .footer-legal {
+    display: flex;
+    list-style-type: none;
+    gap: 20px;
+    justify-content: flex-end;
+    padding-left: 0;
+    margin-bottom: 0;
+  }
+  
+  .footer-legal li a {
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s ease;
+  }
+  
+  .footer-legal li a:hover {
+    color: #2A626A;
+    text-decoration: underline;
+  }
+  
+  @media (max-width: 767.98px) {
+    .footer-legal {
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    
+    .social-icons {
+      justify-content: center;
+    }
+  }

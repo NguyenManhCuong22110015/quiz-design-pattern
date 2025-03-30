@@ -10,6 +10,7 @@ import ListQuizzByCate from '../components/Quizz/ListQuizzByCate'
 import { getAll } from '../api/categoryAPI'
 
 import ChoiceType from '../components/Main/ChoiceType'
+import Footer from '../components/common/Footer'
 
 
 const token = localStorage.getItem('token');
@@ -48,6 +49,7 @@ const MainPage = () => {
         
       ))}
     </div>
+    <Footer/>
     </div>
   )
 }

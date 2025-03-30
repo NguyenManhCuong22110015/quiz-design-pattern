@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react'
 import QuestionGame from '../components/Questions/QuestionGame'
 import { getQuestionsByQuizzId } from '../api/questionApi'
-import { Button, Container, ProgressBar, Modal } from 'react-bootstrap'
+import { Button, Container, ProgressBar, Badge } from 'react-bootstrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, useNavigate } from 'react-router-dom'
 import NavBar from '../layout/NavBar'
 import CreateLoading from '../components/common/CreateLoading'
 import { useAuth } from '../contexts/AuthContext'
 import { checkProcess, initialResult, addAnswerToResult, completeResult } from '../api/resuiltAPI'
-import { showError } from '../components/common/Notification'
+import { showError, showSuccess } from '../components/common/Notification'
 
 const PlayPage = () => {
     const [questions, setQuestions] = useState([]);
@@ -23,7 +23,8 @@ const PlayPage = () => {
     const [result, setResult] = useState(null);  
     const [userAnswers, setUserAnswers] = useState([]); 
     const [pendingAnswers, setPendingAnswers] = useState([]); 
-    const [isInitialized, setIsInitialized] = useState(false); 
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [disableAnswerChange, setDisableAnswerChange] = useState(false);
     
     // Lấy ID từ đường dẫn và thông tin người dùng
     const { id } = useParams();
@@ -32,6 +33,8 @@ const PlayPage = () => {
     
     // Tham chiếu cho timer lưu kết quả tự động
     const autoSaveTimerRef = useRef(null);
+    // Thêm ref để theo dõi việc đã khởi tạo chưa
+    const isInitializedRef = useRef(false);
     
     // 1. Kiểm tra người dùng đã đăng nhập chưa và load dữ liệu
     useEffect(() => {
@@ -40,6 +43,12 @@ const PlayPage = () => {
             navigate('/login', { state: { from: `/play/${id}` } });
             return;
         }
+        
+        // Đặt ngay lập tức để ngăn chặn lần gọi thứ hai
+        if (isInitializedRef.current) {
+            return;
+        }
+        isInitializedRef.current = true;
         
         const initializeQuiz = async () => {
             try {
@@ -57,50 +66,58 @@ const PlayPage = () => {
                 
                 console.log("Checking progress for:", checkData);
                 const existingResult = await checkProcess(checkData);
+                console.log("Existing result:", existingResult);
                 
-                if (existingResult && !existingResult.completed) {
+                if (existingResult && existingResult.status ==="PENDING") {
                     console.log("Found existing result:", existingResult);
                     
-                    // Nếu có tiến trình cũ chưa hoàn thành
                     setResult(existingResult);
                     
-                    // Khôi phục câu trả lời đã lưu
-                    if (existingResult.answers && existingResult.answers.length > 0) {
-                        setUserAnswers(existingResult.answers);
-                        
-                        // Tìm câu hỏi tiếp theo chưa làm thay vì lấy câu cuối cùng đã làm
+                    if (existingResult.UserAnswers && existingResult.UserAnswers.length > 0) {
+                        setUserAnswers(existingResult.UserAnswers);
+                       
                         const answeredQuestionIds = new Set(
-                            existingResult.answers.map(answer => answer.questionId)
+                            existingResult.UserAnswers.map(answer => answer.question)
                         );
                         
-                        // Tìm index câu hỏi đầu tiên chưa được trả lời
                         let nextUnansweredIndex = questionsData.findIndex(
                             question => !answeredQuestionIds.has(question._id)
                         );
-                        
-                        // Nếu tất cả câu hỏi đã được trả lời, đặt index vào cuối
+                        console.log("User answers:", existingResult.UserAnswers);
+                        console.log("Next unanswered question index:", nextUnansweredIndex);
                         if (nextUnansweredIndex === -1) {
-                            nextUnansweredIndex = questionsData.length - 1;
+                            if (existingResult.UserAnswers.length >= questionsData.length) {
+                                const savedScore = existingResult.UserAnswers.reduce(
+                                    (total, answer) => total + (answer.isCorrect ? answer.points || 100 : 0),
+                                    0
+                                );
+                                setScore(savedScore);
+                                setQuizComplete(true);
+                            } else {
+                                nextUnansweredIndex = questionsData.length - 1;
+                            }
                         }
                         
-                        // Đặt vị trí câu hỏi hiện tại vào câu tiếp theo chưa làm
                         setCurrentQuestionIndex(nextUnansweredIndex);
                         
-                        // Cập nhật điểm số từ câu trả lời đã lưu
-                        const savedScore = existingResult.answers.reduce(
+                        const savedScore = existingResult.UserAnswers.reduce(
                             (total, answer) => total + (answer.isCorrect ? answer.points || 100 : 0),
                             0
                         );
+                        console.log("Saved score:", savedScore);
                         setScore(savedScore);
                         
-                        // Đánh dấu chưa trả lời cho câu hỏi hiện tại nếu là câu mới
-                        const isCurrentQuestionAnswered = existingResult.answers.some(
+                        const isCurrentQuestionAnswered = existingResult.UserAnswers.some(
                             answer => answer.questionId === questionsData[nextUnansweredIndex]?._id
                         );
+                        
+                        // Đánh dấu đã trả lời cho câu hỏi hiện tại nếu câu đã có câu trả lời
                         setAnswered(isCurrentQuestionAnswered);
+                        
+                        // Đặt isLocked = true để không thể thay đổi câu trả lời đã có
+                        setDisableAnswerChange(true);
                     }
                 } else {
-                    // Tạo kết quả mới nếu chưa có hoặc đã hoàn thành
                     console.log("Creating new result");
                     const newResult = await initialResult({
                         quizId: id,
@@ -113,6 +130,8 @@ const PlayPage = () => {
             } catch (error) {
                 console.error("Error initializing quiz:", error);
                 showError("Không thể tải bài quiz. Vui lòng thử lại sau!");
+                // Reset flag nếu khởi tạo thất bại để cho phép thử lại
+                isInitializedRef.current = false;
             } finally {
                 setLoading(false);
             }
@@ -128,7 +147,6 @@ const PlayPage = () => {
         };
     }, [id, currentUser, navigate]);
     
-    // 2. Tự động lưu kết quả
     useEffect(() => {
         if (!isInitialized || !result) return;
         
@@ -143,42 +161,46 @@ const PlayPage = () => {
         };
     }, [isInitialized, result]);
     
-    // 3. Hàm lưu câu trả lời
+    // 3. Hàm lưu câu trả lời - Chỉnh sửa để chỉ lưu câu trả lời mới
     const saveAnswers = async (forceComplete = false) => {
-        console.log(result);
         if (!result || !result._id) {
             console.log("No result to save to");
             return;
         }
         
+        // Chỉ lưu khi có câu trả lời mới
+        if (pendingAnswers.length === 0 && !forceComplete) {
+            console.log("No pending answers to save");
+            return;
+        }
+        
         try {
-            // Kết hợp cả câu trả lời cũ và mới để gửi lên server
-            const allAnswers = [...userAnswers, ...pendingAnswers];
+            console.log("Saving pending answers:", pendingAnswers);
             
-            console.log("Saving all answers:", allAnswers);
-            
-            // Gọi API lưu tất cả câu trả lời
+            // Chỉ gửi những câu trả lời mới lên server
             await addAnswerToResult({
                 resultId: result._id,
-                answers: allAnswers,
+                answers: pendingAnswers,
                 completed: forceComplete
             });
             
             // Cập nhật state sau khi lưu thành công
-            setUserAnswers(allAnswers);
+            setUserAnswers(prev => [...prev, ...pendingAnswers]);
             setPendingAnswers([]);
             
             if (forceComplete) {
                 // Đánh dấu hoàn thành bài quiz
                 await completeResult({
-                    resultId: result.id,
+                    resultId: result._id,
                     score: score,
                     accuracy: (score / (questions.length * 100)) * 100
                 });
             }
+            
+            return true;
         } catch (error) {
             console.error("Error saving answers:", error);
-            // Không hiển thị lỗi cho người dùng để tránh làm gián đoạn quá trình làm bài
+            return false;
         }
     };
     
@@ -209,18 +231,24 @@ const PlayPage = () => {
             a => a.questionId === currentQuestion._id
         );
         
+        // Nếu câu hỏi đã được trả lời và đã được lưu, không cho phép thay đổi
+        if (existingAnswerIndex !== -1 && disableAnswerChange) {
+            showError("Câu hỏi này đã được trả lời, không thể thay đổi!");
+            return;
+        }
+        
         // Tạo đối tượng câu trả lời
         const newAnswer = {
             questionId: currentQuestion._id,
             selectedOption: answer,
             isCorrect: isCorrect,
             points: points,
-            timeTaken: 0 // Có thể thêm tính năng đo thời gian sau
+            timeTaken: 0 
         };
         
-        // Xử lý câu trả lời cũ nếu có
+        // Cập nhật điểm số
         if (existingAnswerIndex !== -1) {
-            // Nếu đã có trả lời cũ
+            // Câu hỏi đã có trong userAnswers nhưng chưa được lưu
             const oldAnswer = userAnswers[existingAnswerIndex];
             
             // Cập nhật điểm số
@@ -242,27 +270,28 @@ const PlayPage = () => {
                 setScore(prevScore => prevScore + points);
             }
             
-            // Thêm vào userAnswers
-            setUserAnswers(prev => [...prev, newAnswer]);
-        }
-        
-        // Thêm vào pendingAnswers để lưu
-        const pendingIndex = pendingAnswers.findIndex(
-            a => a.questionId === currentQuestion._id
-        );
-        
-        if (pendingIndex !== -1) {
-            // Cập nhật pendingAnswers nếu đã có
-            const updatedPending = [...pendingAnswers];
-            updatedPending[pendingIndex] = newAnswer;
-            setPendingAnswers(updatedPending);
-        } else {
-            // Thêm mới vào pendingAnswers
+            // Thêm vào pendingAnswers để lưu
             setPendingAnswers(prev => [...prev, newAnswer]);
         }
         
         // Đánh dấu đã trả lời
         setAnswered(true);
+        
+        // Lưu câu trả lời ngay lập tức để tránh mất dữ liệu
+        saveAnswers().then(success => {
+            if (success) {
+                // Sau khi lưu thành công, tự động chuyển sang câu tiếp theo sau 1.5 giây
+                setTimeout(() => {
+                    // Nếu còn câu hỏi tiếp theo
+                    if (currentQuestionIndex < questions.length - 1) {
+                        handleNextQuestion();
+                    } else {
+                        // Nếu là câu cuối cùng
+                        handleFinishQuiz();
+                    }
+                }, 1500);
+            }
+        });
     };
     
     // 6. Xử lý khi chuyển câu hỏi
@@ -271,36 +300,38 @@ const PlayPage = () => {
         await saveAnswers();
         
         if (currentQuestionIndex < questions.length - 1) {
-            setCurrentQuestionIndex(currentQuestionIndex + 1);
-            setAnswered(false);
+            // Tạo danh sách các ID câu hỏi đã trả lời
+            const answeredIds = new Set(userAnswers.map(a => a.questionId));
+            let nextIndex = currentQuestionIndex + 1;
+            let foundUnanswered = false;
+            
+            // Tìm câu tiếp theo chưa trả lời
+            while (nextIndex < questions.length) {
+                if (!answeredIds.has(questions[nextIndex]._id)) {
+                    foundUnanswered = true;
+                    break;
+                }
+                nextIndex++;
+            }
+            
+            // Nếu không tìm thấy câu nào chưa trả lời từ vị trí hiện tại đến cuối
+            // thì hiển thị câu tiếp theo như bình thường
+            if (!foundUnanswered) {
+                nextIndex = currentQuestionIndex + 1;
+            }
+            
+            // Cập nhật vị trí câu hỏi
+            setCurrentQuestionIndex(nextIndex);
             
             // Kiểm tra xem câu tiếp theo đã được trả lời chưa
-            const nextQuestion = questions[currentQuestionIndex + 1];
-            if (nextQuestion) {
-                const isNextAnswered = userAnswers.some(
-                    answer => answer.questionId === nextQuestion._id
-                );
-                
-                if (isNextAnswered) {
-                    // Nếu câu tiếp theo đã được trả lời, tìm câu chưa trả lời
-                    const answeredIds = new Set(userAnswers.map(a => a.questionId));
-                    let foundUnanswered = false;
-                    
-                    // Tìm từ câu tiếp theo đến cuối
-                    for (let i = currentQuestionIndex + 1; i < questions.length; i++) {
-                        if (!answeredIds.has(questions[i]._id)) {
-                            setCurrentQuestionIndex(i);
-                            foundUnanswered = true;
-                            break;
-                        }
-                    }
-                    
-                    // Nếu không tìm thấy, hiển thị câu tiếp theo bình thường
-                    if (!foundUnanswered) {
-                        setAnswered(isNextAnswered);
-                    }
-                }
-            }
+            const isNextQuestionAnswered = userAnswers.some(
+                answer => answer.questionId === questions[nextIndex]._id
+            );
+            
+            // Cập nhật trạng thái
+            setAnswered(isNextQuestionAnswered);
+            setDisableAnswerChange(isNextQuestionAnswered);
+            
         } else {
             // Khi hoàn thành bài quiz
             await saveAnswers(true); // Lưu và đánh dấu hoàn thành
@@ -317,6 +348,7 @@ const PlayPage = () => {
             if (!answeredIds.has(questions[i]._id)) {
                 setCurrentQuestionIndex(i);
                 setAnswered(false);
+                setDisableAnswerChange(false);
                 return true;
             }
         }
@@ -326,6 +358,7 @@ const PlayPage = () => {
             if (!answeredIds.has(questions[i]._id)) {
                 setCurrentQuestionIndex(i);
                 setAnswered(false);
+                setDisableAnswerChange(false);
                 return true;
             }
         }
@@ -339,6 +372,7 @@ const PlayPage = () => {
         try {
             await saveAnswers(true);
             setQuizComplete(true);
+            showSuccess("Bài quiz hoàn thành! Xem kết quả của bạn.");
         } catch (error) {
             console.error("Error finishing quiz:", error);
             showError("Có lỗi khi hoàn thành bài quiz. Kết quả của bạn đã được lưu một phần.");
@@ -367,6 +401,7 @@ const PlayPage = () => {
             setAnswered(false);
             setCountdown(5);
             setShowCountdown(true);
+            setDisableAnswerChange(false);
         } catch (error) {
             console.error("Error restarting quiz:", error);
             showError("Không thể bắt đầu lại bài quiz. Vui lòng thử lại sau!");
@@ -429,6 +464,10 @@ const PlayPage = () => {
                         className="mb-4" 
                         style={{ height: "15px", borderRadius: "10px" }}
                     />
+                    <div className="mb-4">
+                        <p>Số câu trả lời đúng: {userAnswers.filter(a => a.isCorrect).length}/{questions.length}</p>
+                        <p>Độ chính xác: {((userAnswers.filter(a => a.isCorrect).length / questions.length) * 100).toFixed(2)}%</p>
+                    </div>
                     <Button variant="primary" size="lg" onClick={restartQuiz} className="me-2">
                         Play Again
                     </Button>
@@ -456,6 +495,11 @@ const PlayPage = () => {
                             onClick={() => {
                                 if (!goToUnansweredQuestion()) {
                                     showError("Tất cả câu hỏi đã được trả lời!");
+                                    
+                                    // Nếu tất cả câu hỏi đã trả lời, hiển thị kết quả
+                                    if (userAnswers.length >= questions.length) {
+                                        handleFinishQuiz();
+                                    }
                                 }
                             }}
                         >
@@ -472,6 +516,21 @@ const PlayPage = () => {
                     style={{ height: "8px", borderRadius: "4px" }}
                 />
                 
+                {/* Hiển thị thông báo nếu câu hỏi đã được trả lời và không thể thay đổi */}
+                {userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) && disableAnswerChange && (
+                    <div className="alert alert-warning mb-3">
+                        <i className="fas fa-lock me-2"></i>
+                        Câu hỏi này đã được trả lời và không thể thay đổi. 
+                        <Button 
+                            variant="link" 
+                            className="p-0 ms-2" 
+                            onClick={goToUnansweredQuestion}
+                        >
+                            Chuyển đến câu chưa trả lời
+                        </Button>
+                    </div>
+                )}
+                
                 {/* Question content */}
                 {questions.length > 0 && 
                     <QuestionGame 
@@ -480,6 +539,7 @@ const PlayPage = () => {
                         totalQuestions={questions.length}
                         onAnswer={handleAnswer}
                         defaultAnswer={userAnswers.find(a => a.questionId === questions[currentQuestionIndex]?._id)?.selectedOption}
+                        isLocked={userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) && disableAnswerChange}
                     />
                 }
                 
@@ -487,11 +547,11 @@ const PlayPage = () => {
                 <div className="text-center mt-4 d-flex justify-content-between">
                     <div className="score-display">
                         <h5>Score: {score} points</h5>
-                        {pendingAnswers.length > 0 && (
-                            <small className="text-muted">
-                                Answers will be saved automatically
-                            </small>
-                        )}
+                        <div className="mt-2">
+                            <Badge bg="info">
+                                {userAnswers.length} / {questions.length} câu đã trả lời
+                            </Badge>
+                        </div>
                     </div>
                     
                     <div>
@@ -500,7 +560,7 @@ const PlayPage = () => {
                                 variant="primary" 
                                 size="lg" 
                                 onClick={handleNextQuestion}
-                                disabled={!answered && questions.length > 0}
+                                disabled={!answered && !userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id)}
                             >
                                 Next Question
                             </Button>
@@ -509,7 +569,7 @@ const PlayPage = () => {
                                 variant="success" 
                                 size="lg" 
                                 onClick={handleFinishQuiz}
-                                disabled={!answered && questions.length > 0}
+                                disabled={!answered && !userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id)}
                             >
                                 Finish Quiz
                             </Button>

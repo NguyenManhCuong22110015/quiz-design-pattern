@@ -6,6 +6,8 @@ import 'flatpickr/dist/themes/light.css';
 import '../styles/Profile.css';
 import { Modal, Button } from 'react-bootstrap';
 import moment from 'moment';
+import { getUserById, updateField } from '../api/userAPI';
+import Footer from '../components/common/Footer';
 
 const ProfilePage = () => {
   const [userData, setUserData] = useState({
@@ -30,31 +32,26 @@ const ProfilePage = () => {
   const [textInputValue, setTextInputValue] = useState('');
   const [datePickerValue, setDatePickerValue] = useState(null);
   
-  // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Fetch user data on component mount
+  const userId = localStorage.getItem('userId') || '12345';
+
   useEffect(() => {
-    // Mock fetch user data - replace with your actual API call
     const fetchUserData = async () => {
       try {
-        // Replace with your actual API endpoint
-        // const response = await fetch('/api/user/profile');
-        // const data = await response.json();
-        
-        // For now, using mock data
+       const userData = await getUserById(userId);
         const mockUserData = {
-          id: localStorage.getItem('userId') || '12345',
-          name: localStorage.getItem('username') || 'John Doe',
-          email: localStorage.getItem('email') || 'john@example.com',
+          id: userId,
+          name: userData.name || 'John Doe',
+          email: userData.email || 'john@example.com',
           birthday: '01/01/1990',
-          provider: localStorage.getItem('provider') || 'email',
-          role: 'user', // or 'writer', etc.
+          provider: userData.provider || 'email',
+          role: 'user', 
           pen_name: 'J. Doe',
-          created_at: '2022-01-01',
-          password: 'created' // or undefined if social login
+          created_at: userData.createAt,
+          password: 'created'
         };
         
         setUserData(mockUserData);
@@ -120,7 +117,7 @@ const ProfilePage = () => {
     }
 
     try {
-      // Replace with your actual API endpoint
+
       // const response = await fetch('/api/user/update-birthday', {
       //   method: 'POST',
       //   headers: {
@@ -182,19 +179,18 @@ const ProfilePage = () => {
     }
 
     try {
-      // Replace with your actual API endpoint
-      // const response = await fetch('/api/user/update-field', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     field: currentType,
-      //     value: textInputValue
-      //   })
-      // });
-      
-      // Mock successful response
+     
+      const data = {
+        userId : userId,
+        fieldName: currentField,
+        fieldValue: textInputValue
+      }
+
+
+
+      const response = await updateField(data);
+
+  
       setUserData({
         ...userData,
         [currentType]: textInputValue
@@ -381,42 +377,21 @@ const ProfilePage = () => {
 
         {/* Profile Section */}
         <div>
-          <h2 className="account-title mb-3">Become a subscriber</h2>
+          <h2 className="account-title mb-3">Check your quiz-taking history</h2>
           <div className="row mb-2">
-            <div className="col-4">Gain full access to quizzes and more</div>
+            <div className="col-4">Go to the history page by clicking the button</div>
             <div className="col-6 value"></div>
             <div className="col-2">
-              <Link className="btn btn-outline-dark" to="/payment/checkout">
+              <Link className="btn btn-outline-dark" to="/history">
                 Subscribe
               </Link>
             </div>
           </div>
         </div>
         
-        {userData.role === 'writer' && (
-          <>
-            <hr className="section-divider" />
-            <div>
-              <h2 className="account-title mb-3">Writer</h2>
-              <div className="row mb-2">
-                <div className="col-4">Pen name</div>
-                <div className="col-6 value" id="pen_name">
-                  {userData.pen_name}
-                </div>
-                <div className="col-2">
-                  <button
-                    className="btn btn-outline-dark"
-                    onClick={() => openTextModal('Update Pen Name', 'pen_name', 'pen_name')}
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+       
       </div>
-      
+      <Footer/>
       {/* Date Picker Modal */}
       <Modal show={showDateModal} onHide={() => setShowDateModal(false)} centered>
         <Modal.Header closeButton>

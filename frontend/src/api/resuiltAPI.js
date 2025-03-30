@@ -27,3 +27,14 @@ export const completeResult = async (data) => {
       throw error;
     }
   };
+
+
+export  const getTopTenPlayers = async (quizId) => {
+    try {
+        const response = await API.get(`/api/results/top-ten-players?quizId=${quizId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching top ten players:', error);
+        throw error;
+    }
+}

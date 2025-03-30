@@ -109,7 +109,6 @@ const ListQuizzByCate = ({category}) => {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    background: 'rgba(0, 0, 0, 0.15)',
     boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
     border: 'none',
     cursor: 'pointer',

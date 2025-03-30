@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, Form, ListGroup, Spinner } from 'react-bootstrap';
 import { FaStar, FaRegStar, FaUsers, FaQuestionCircle, FaClock, FaTrophy, FaComment, FaPlay } from 'react-icons/fa';
-import { getQuizById } from '../../api/quizzApi';
-import { getCommentsByQuiz, addComment } from '../../api/commentApi';
-import { getTopPlayers } from '../../api/scoreApi';
-import { useAuth } from '../../contexts/AuthContext';
+import { getQuizById } from '../api/quizzApi';
+import { getCommentsByQuiz, addComment } from '../api/commentApi';
+import { getTopPlayers } from '../api/scoreApi';
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import NavBar from '../../layout/NavBar';
-import CreateLoading from '../common/CreateLoading';
+import NavBar from '../layout/NavBar';
+import CreateLoading from '../components/common/CreateLoading';
+import Ranking from '../components/common/Ranking';
+import { getTopTenPlayers } from '../api/resuiltAPI';
 
-const QuizDetail = () => {
+const QuizDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const auth = useAuth(); 
@@ -36,7 +38,10 @@ const QuizDetail = () => {
         
 
 
-        const topPlayersData = await getTopPlayers(id);
+       
+        const topPlayersData = await getTopTenPlayers(id);
+         
+
         setTopPlayers(topPlayersData);
       } catch (error) {
         console.error("Error fetching quiz details:", error);
@@ -71,7 +76,7 @@ const QuizDetail = () => {
       
       const commentData = {
         quizId: id,
-        text: newComment,
+        message: newComment,
         userId: currentUser.id,
       };
       
@@ -291,20 +296,20 @@ const QuizDetail = () => {
                     <ListGroup.Item key={comment._id} className="border-bottom py-3">
                       <div className="d-flex">
                         <img 
-                          src={comment.user?.avatar || "https://via.placeholder.com/40"} 
-                          alt={comment.user?.name || "User"} 
+                          src={comment.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.userName)}&background=random`} 
+                          alt={comment.userName || "User"} 
                           className="rounded-circle me-3"
                           width="40"
                           height="40"
                         />
                         <div>
                           <div className="d-flex align-items-center mb-1">
-                            <h6 className="mb-0 me-2">{comment.user?.name || "Anonymous"}</h6>
+                            <h6 className="mb-0 me-2">{comment.userName || "Anonymous"}</h6>
                             <small className="text-muted">
                               {new Date(comment.createdAt).toLocaleDateString()}
                             </small>
                           </div>
-                          <p className="mb-0">{comment.text}</p>
+                          <p className="mb-0">{comment.message}</p>
                         </div>
                       </div>
                     </ListGroup.Item>
@@ -324,60 +329,14 @@ const QuizDetail = () => {
           <Card className="border-0 shadow-sm rounded-4 sticky-top" style={{ top: "20px" }}>
             <Card.Body>
               <h4 className="mb-3 d-flex align-items-center">
-                <FaTrophy className="text-warning me-2" />
-                Bảng xếp hạng
+                
+
               </h4>
+              <Ranking
+              users={topPlayers}
               
-              {topPlayers.length > 0 ? (
-                <ListGroup variant="flush">
-                  {topPlayers.map((player, index) => (
-                    <ListGroup.Item key={index} className="border-bottom py-3">
-                      <div className="d-flex align-items-center">
-                        <div className="me-3 position-relative">
-                          <img 
-                            src={player.user?.avatar || "https://via.placeholder.com/40"} 
-                            alt={player.user?.name} 
-                            className="rounded-circle"
-                            width="50"
-                            height="50"
-                          />
-                          <div 
-                            className="position-absolute bottom-0 start-100 translate-middle badge rounded-pill"
-                            style={{ 
-                              background: index === 0 ? 'gold' : index === 1 ? 'silver' : '#cd7f32',
-                              width: '24px',
-                              height: '24px',
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              transform: 'translate(-50%, 0)',
-                              border: '2px solid white',
-                              color: index === 0 ? 'black' : 'white',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            {index + 1}
-                          </div>
-                        </div>
-                        <div className="flex-grow-1">
-                          <h6 className="mb-0">{player.user?.name}</h6>
-                          <small className="text-muted">{player.completedAt}</small>
-                        </div>
-                        <div className="text-end">
-                          <h5 className="mb-0 text-primary">{player.score}</h5>
-                          <small className="text-success">
-                            {Math.round(player.accuracy * 100)}% chính xác
-                          </small>
-                        </div>
-                      </div>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <div className="text-center py-4 text-muted">
-                  <p>Chưa có người chơi nào hoàn thành quiz này</p>
-                </div>
-              )}
+              />
+             
             </Card.Body>
           </Card>
         </Col>
@@ -386,4 +345,4 @@ const QuizDetail = () => {
   );
 };
 
-export default QuizDetail;
+export default QuizDetailPage;

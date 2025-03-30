@@ -33,14 +33,21 @@
 }
 
 .choice-type-card .quiz-card {
-  background-color: #2A626A;
-  color: white;
+  background: linear-gradient(135deg, #2A626A, #1C4A4F);
+  color: white; /* Text color trắng để tương phản */
   padding: 15px;
   border-radius: 15px;
   width: 48%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.choice-type-card .quiz-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .choice-type-card .quiz-card img {
@@ -50,22 +57,86 @@
 
 .choice-type-card .quiz-card .content {
   width: 50%;
+  background:  linear-gradient(135deg, #2A626A, #1C4A4F);
 }
 
 .choice-type-card .quiz-card h2 {
-  font-size: 1.4rem;
-  margin-bottom: 5px;
+  font-size: 1.6rem;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: rgb(0, 0, 0);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .choice-type-card .quiz-card p {
-  font-size: 0.9rem;
-  margin-bottom: 10px;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  color: rgba(0, 0, 0, 0.9);
 }
 
 .choice-type-card .quiz-card Link {
   border-radius: 30px;
   font-weight: bold;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.choice-type-card .quiz-card .btn {
+  border-radius: 30px;
+  font-weight: 600;
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.choice-type-card .quiz-card .btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.choice-type-card .quiz-card .btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.choice-type-card .quiz-card .btn-success {
+  background: linear-gradient(135deg, #28a745, #218838);
+  border: none;
+  color: white;
+}
+
+.choice-type-card .quiz-card .btn-success:hover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: -1;
+}
+
+.choice-type-card .quiz-card .btn-info {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  border: none;
+  color: white !important; /* Overriding text-dark class */
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.choice-type-card .quiz-card .btn-info:hover::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: -1;
 }
 
 .choice-type-card .recently-published-items .published-item {
@@ -81,6 +152,24 @@
   padding-bottom: 5px;
 }
 
+/* Thêm hiệu ứng pulse cho buttons */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+  }
+}
+
+.choice-type-card .quiz-card .btn:focus {
+  animation: pulse 1.5s;
+  outline: none;
+}
+
 /* Tablet layout (768px to 991px) */
 @media (max-width: 991px) {
   .choice-type-card .quiz-card {
@@ -92,8 +181,9 @@
   }
   
   .choice-type-card .quiz-card .content {
-    width: 100%; /* Content takes full width */
+    width: 100%; 
     padding: 10px;
+    background-color: #2A626A;
   }
   
   .choice-type-card .quiz-card h2 {
@@ -101,7 +191,7 @@
   }
 }
 
-/* Mobile layout (up to 767px) */
+
 @media (max-width: 767px) {
   .choice-type-card .quiz-section {
     flex-direction: column; /* Stack cards */
@@ -110,6 +200,7 @@
   .choice-type-card .quiz-card {
     width: 100%; /* Full width cards */
     margin-bottom: 20px;
+    padding: 20px;
   }
   
   .choice-type-card .quiz-card:last-child {
@@ -117,16 +208,21 @@
   }
   
   .choice-type-card .quiz-card h2 {
-    font-size: 1.1rem;
+    font-size: 1.4rem;
   }
   
   .choice-type-card .quiz-card p {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
   
   .choice-type-card .quiz-card Link {
     font-size: 0.9rem;
     padding: 0.375rem 0.75rem;
+  }
+  
+  .choice-type-card .quiz-card .btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
   }
   
   .choice-type-card .nav-icons .nav-item span {
@@ -153,4 +249,52 @@
   .choice-type-card .quiz-card {
     padding: 12px;
   }
+}
+
+/* Button hover effects */
+.glow-on-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.glow-on-hover:after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  transform: rotate(30deg);
+  transition: transform 0.5s;
+}
+
+.glow-on-hover:hover:after {
+  transform: rotate(0deg);
+}
+
+/* Card effects */
+.card-3d {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.card-3d:hover {
+  transform: rotateY(5deg) rotateX(5deg);
+  box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Button press effect */
+.btn-press {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.btn-press:active {
+  transform: scale(0.95);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
