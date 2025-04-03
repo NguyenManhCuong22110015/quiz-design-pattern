@@ -3,7 +3,7 @@
 An interactive online quiz platform built with **React**, **Node.js (Express)**, and **MongoDB**. Users can take quizzes, track scores, and join real-time multiplayer quiz sessions. The system also applies **Generative AI** for quiz question suggestions and a basic chatbot for assistance.
 
 ## 🛠 Technologies Used  
-- **Frontend:** React, Vite, Tailwind CSS  
+- **Frontend:** React, Vite, Bootstrap CSS  
 - **Backend:** Node.js, Express, MongoDB (Mongoose), WebSocket  
 - **Authentication:** JWT  
 - **Media Storage:** Cloudinary  
@@ -15,16 +15,16 @@ An interactive online quiz platform built with **React**, **Node.js (Express)**,
 - AI-assisted quiz generation for question suggestions.  
 - Basic chatbot for quiz-related queries.  
 - Real-time multiplayer quiz sessions using WebSocket.  
-- Leaderboard and performance tracking.  
+- Leaderboard and performance tracking.  ( *comming soon* )
 - Cloudinary integration for storing images.  
-- Responsive UI built with React & Tailwind CSS.  
+- Responsive UI built with React & Bootstrap CSS.  
 
 ## ⚡ Installation & Setup  
 
 ### 1️⃣ Clone the Repository  
 ```bash
-git clone https://github.com/yourusername/quiz-app.git
-cd quiz-app
+git clone https://github.com/NMCuonG08/WEBMERN.git
+
 ```
 
 ### 2️⃣ Install Dependencies  
