@@ -1,6 +1,7 @@
 /* General Styles */
 .ranking-container {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  z-index: 1;
 }
 
 .ranking-title {

@@ -11,6 +11,7 @@ import { getAll } from '../api/categoryAPI'
 
 import ChoiceType from '../components/Main/ChoiceType'
 import Footer from '../components/common/Footer'
+import Chatbot from '../components/common/Chatbot'
 
 
 const token = localStorage.getItem('token');
@@ -50,6 +51,7 @@ const MainPage = () => {
       ))}
     </div>
     <Footer/>
+    <Chatbot/>
     </div>
   )
 }

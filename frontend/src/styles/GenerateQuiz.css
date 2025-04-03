@@ -5,7 +5,10 @@
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
-   
+}
+
+.generate-quiz{
+  background-color: #264653;
 }
 
 .generate-quiz  h1 {

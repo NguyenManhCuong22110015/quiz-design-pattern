@@ -324,9 +324,9 @@ const QuizDetailPage = () => {
           </Card>
         </Col>
         
-        {/* Leaderboard - Right Column */}
+        {/* Leaderboard - Right Column adding  sticky-top */} 
         <Col lg={4}>
-          <Card className="border-0 shadow-sm rounded-4 sticky-top" style={{ top: "20px" }}>
+          <Card className="border-0 shadow-sm rounded-4 " style={{ top: "20px" }}>
             <Card.Body>
               <h4 className="mb-3 d-flex align-items-center">
                 

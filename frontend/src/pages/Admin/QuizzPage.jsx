@@ -9,6 +9,8 @@ import AddQuizzModal from '../../components/Admin/AddQuizModal'
 import EditQuizModal from '../../components/Admin/EditQuizModal';
 import { showSuccess, showError } from "../../components/common/Notification";
 import { FcQuestions } from "react-icons/fc";
+import CreateLoading from '../../components/common/CreateLoading'
+import Swal from "sweetalert2";
 
 const QuizzPage = () => {
 
@@ -17,7 +19,7 @@ const QuizzPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
-
+  const [isLoading, setIsLoading] = useState(false);
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
   const handleOpenEditModal = (quiz) => {
@@ -127,10 +129,52 @@ const QuizzPage = () => {
       }
     }
   }, [])
-
+  const handleTogglePublish = async (quizId, newPublishedState) => {
+    try {
+      
+      // Hiển thị xác nhận nếu unpublish
+      if (!newPublishedState) {
+        const confirmed = await Swal.fire({
+          title: 'Unpublish this quiz?',
+          text: "The quiz will no longer be accessible to participants",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, unpublish it!'
+        });
+        
+        if (!confirmed.isConfirmed) {
+          return;
+        }
+      }
+      
+      const updateData = {
+        published: newPublishedState
+      };
+      
+      // Gọi API update
+      await updateQuiz(quizId, updateData);
+      
+      // Cập nhật state local để UI thay đổi ngay lập tức
+      setQuizzes(prev => 
+        prev.map(quiz => 
+          quiz._id === quizId ? { ...quiz, published: newPublishedState } : quiz
+        )
+      );
+      
+      // Hiển thị thông báo thành công
+      showSuccess(`Quiz ${newPublishedState ? 'published' : 'unpublished'} successfully!`);
+    } catch (error) {
+      console.error('Error toggling publish state:', error);
+      showError(`Failed to ${newPublishedState ? 'publish' : 'unpublish'} quiz`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    
+    setIsLoading(true);
     const fetchQuizzes = async () => {
       const res = await getQuizzesByUserId(userId);
       console.log(res)
@@ -138,11 +182,15 @@ const QuizzPage = () => {
       setQuizzes(res)
     }
     fetchQuizzes()
+     setIsLoading(false);
   }
   , [])
   const handleDelete = () => {
     alert('Deleted')
   };
+  if(isLoading) {
+    return <CreateLoading/>
+  }
   return (
     <>
       <div className='sidebar admin-layout'>
@@ -168,8 +216,10 @@ const QuizzPage = () => {
         <th scope="col">Description</th>
         <th scope="col" width="120" className="text-center">Created at</th>
         <th scope="col" width="120" className="text-center">Updated</th>
+        <th scope="col" width="160" className="text-center">Published</th>
         <th scope="col" width="160" className="text-center">Actions</th>
         <th scope="col" width="160" className="text-center">Questions</th>
+        
       </tr>
     </thead>
     <tbody>
@@ -193,6 +243,22 @@ const QuizzPage = () => {
               </span>
             </td>
             <td className="text-center align-middle">
+              <button 
+                className={`btn btn-sm ${quiz.published ? 'btn-success' : 'btn-outline-secondary'}`}
+                onClick={() => handleTogglePublish(quiz._id, !quiz.published)}
+              >
+                {quiz.published ? (
+                  <>
+                    <i className="bi bi-globe me-1"></i> Published
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-file-earmark-lock me-1"></i> Unpublished
+                  </>
+                )}
+              </button>
+            </td>
+                        <td className="text-center align-middle">
               <div className="btn-group" role="group">
                 <button 
                   onClick={() => handleOpenEditModal(quiz)}
