@@ -59,7 +59,7 @@ const RoomListPage = () => {
     }
     const handlePasswordSubmit = async () => {
         try {
-            const response = await fetch(`http://localhost:5000/api/rooms/verify-password`, {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_API}/api/rooms/verify-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -9,7 +9,7 @@ const LoginPage = () => {
   useEffect(() => {
     function handleAuthMessage(event) {
       // Verify the origin for security
-      if (event.origin !== "http://localhost:5173") return;
+      
       
       // Check if this is an auth success message
       if (event.data.type === "AUTH_SUCCESS") {
@@ -67,7 +67,7 @@ const LoginPage = () => {
     const top = window.innerHeight / 2 - height / 2;
     
     window.open(
-      `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/auth/google`,
+      `${process.env.VITE_BACKEND_API || 'http://localhost:5000'}/auth/google`,
       'Google Sign In',
       `width=${width},height=${height},top=${top},left=${left}`
     );
