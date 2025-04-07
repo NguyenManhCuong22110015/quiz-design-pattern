@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, Form, ListGroup, Spinner } from 'react-bootstrap';
 import { FaStar, FaRegStar, FaUsers, FaQuestionCircle, FaClock, FaTrophy, FaComment, FaPlay } from 'react-icons/fa';
-import { getQuizById } from '../api/quizzApi';
+import { getQuizDetailById } from '../api/quizzApi';
 import { getCommentsByQuiz, addComment } from '../api/commentApi';
 import { getTopPlayers } from '../api/scoreApi';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,37 +11,46 @@ import NavBar from '../layout/NavBar';
 import CreateLoading from '../components/common/CreateLoading';
 import Ranking from '../components/common/Ranking';
 import { getTopTenPlayers } from '../api/resuiltAPI';
+import RateQuiz from '../components/Quizz/RateQuiz';
 
 const QuizDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const auth = useAuth(); 
   const currentUser = auth?.currentUser; 
-    const [quiz, setQuiz] = useState(null);
+  const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [topPlayers, setTopPlayers] = useState([]);
+  const [userRating, setUserRating] = useState(0);
 
   useEffect(() => {
     const fetchQuizData = async () => {
       try {
         setLoading(true);
-        const quizData = await getQuizById(id);
+        const quizData = await getQuizDetailById(id);
         console.log("user: "+ auth.currentUser);
         setQuiz(quizData);
+        
+        // Nếu user đã đăng nhập, kiểm tra xem họ đã đánh giá quiz này chưa
+        if (currentUser) {
+          try {
+            const userRatingData = await getUserQuizRating(id, currentUser.id);
+            if (userRatingData && userRatingData.rating) {
+              setUserRating(userRatingData.rating);
+            }
+          } catch (err) {
+            console.log("User hasn't rated this quiz yet");
+          }
+        }
         
         // Fetch comments for this quiz
         const commentsData = await getCommentsByQuiz(id);
         setComments(commentsData);
         
-
-
-       
         const topPlayersData = await getTopTenPlayers(id);
-         
-
         setTopPlayers(topPlayersData);
       } catch (error) {
         console.error("Error fetching quiz details:", error);
@@ -52,7 +61,7 @@ const QuizDetailPage = () => {
     };
     
     fetchQuizData();
-  }, [id]);
+  }, [id, currentUser]);
 
   const handleStartQuiz = () => {
     navigate(`/play/${id}`);
@@ -106,6 +115,17 @@ const QuizDetailPage = () => {
     }
   };
 
+  const handleRatingUpdated = (newAverageRating) => {
+    setQuiz(prev => ({
+      ...prev,
+      quizze: {
+        ...prev.quizze,
+        rating: newAverageRating
+      }
+    }));
+    setUserRating(rating);
+  };
+
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -149,8 +169,8 @@ const QuizDetailPage = () => {
             <div className="position-relative">
               <Card.Img 
                 variant="top" 
-                src={quiz.image} 
-                alt={quiz.title}
+                src={quiz.quizze.image} 
+                alt={quiz.quizze.title}
                 style={{ height: '280px', objectFit: 'cover' }}
               />
               <div className="position-absolute bottom-0 start-0 w-100 p-3" 
@@ -158,7 +178,7 @@ const QuizDetailPage = () => {
                      background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0))',
                      padding: '50px 20px 20px'
                    }}>
-                <h2 className="text-white mb-1">{quiz.title}</h2>
+                <h2 className="text-white mb-1">{quiz.quizze.title}</h2>
                 <div className="d-flex align-items-center">
                   <Badge 
                     bg="primary" 
@@ -168,7 +188,7 @@ const QuizDetailPage = () => {
                       fontSize: '0.8rem'
                     }}
                   >
-                    {quiz.category}
+                    {quiz.quizze.category} {/* quiz.category.name */}
                   </Badge>
                   <Badge 
                     bg="success" 
@@ -178,7 +198,7 @@ const QuizDetailPage = () => {
                       fontSize: '0.8rem'
                     }}
                   >
-                    {quiz.difficulty}
+                    {quiz.quizze.difficulty}
                   </Badge>
                 </div>
               </div>
@@ -186,27 +206,43 @@ const QuizDetailPage = () => {
             
             <Card.Body>
               <div className="d-flex flex-wrap justify-content-between mb-4">
-                <div className="d-flex align-items-center me-3 mb-2">
-                  <div className="me-2">
-                    {renderStars(quiz.rating || 0)}
+                <div className="d-flex align-items-center me-3 mb-2 flex-column">
+                  <div className="me-2 d-flex">
+                    {renderStars(quiz.quizze.rating || 0)}
+                    <span className="text-muted ms-3">({quiz.quizze.rating?.toFixed(1) || 0} / 5)</span>
                   </div>
-                  <span className="text-muted">({quiz.rating?.toFixed(1) || 0})</span>
+                  
+                  
+                  {currentUser && (
+                    <div className="mt-3">
+                      <RateQuiz 
+                        quizId={id}
+                        initialRating={quiz.quizze.rating || 0}
+                        userRating={userRating}
+                        onRatingUpdated={handleRatingUpdated}
+                      />
+                    </div>
+                  )}
+                  
+                  {!currentUser && (
+                    <small className="text-muted mt-2">Đăng nhập để đánh giá</small>
+                  )}
                 </div>
                 
                 <div className="d-flex">
                   <div className="d-flex align-items-center me-3 mb-2">
                     <FaQuestionCircle className="text-primary me-1" />
-                    <span>{quiz.questionCount || 0} câu hỏi</span>
+                    <span>{quiz.questionNumber|| 0} câu hỏi</span>
                   </div>
                   
                   <div className="d-flex align-items-center me-3 mb-2">
                     <FaUsers className="text-success me-1" />
-                    <span>{quiz.participantCount?.toLocaleString() || 0} người chơi</span>
+                    <span>{quiz.players?.toLocaleString() || 0} lượt chơi</span>
                   </div>
                   
                   <div className="d-flex align-items-center mb-2">
                     <FaClock className="text-danger me-1" />
-                    <span>~{quiz.estimatedTime || 5} phút</span>
+                    <span>~{quiz.quizze.estimatedTime || 5} phút</span>
                   </div>
                 </div>
               </div>
@@ -214,7 +250,7 @@ const QuizDetailPage = () => {
               <div className="mb-4">
                 <h4>Mô tả</h4>
                 <p className="text-muted">
-                  {quiz.description || "Không có mô tả cho quiz này."}
+                  {quiz.quizze.description || "Không có mô tả cho quiz này."}
                 </p>
               </div>
               

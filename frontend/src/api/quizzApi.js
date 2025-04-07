@@ -9,7 +9,19 @@ export async function getQuizById(id) {
     const response = await API.get("api/quizzes/getById?id=" + id);
     return response.data;
 };
-
+export async function getQuizDetailById(id) {
+    const response = await API.get("api/quizzes/getDetailById?id=" + id);
+    return response.data;
+};
+export async function rateQuiz(quizId, rating) {
+    try {
+      const response = await API.post(`/api/quizzes/${quizId}/rate`, { rating });
+      return response.data;
+    } catch (error) {
+      console.error('Error rating quiz:', error);
+      throw error;
+    }
+  }
 
 export async function getAllQuizzes(userId) {
     const response = await API.get("api/quizzes/getAll?userId=" + userId);
