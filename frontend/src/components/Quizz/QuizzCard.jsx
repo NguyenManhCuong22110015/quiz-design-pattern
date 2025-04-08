@@ -2,7 +2,7 @@ import React from 'react'
 import { Card, Badge, ProgressBar } from 'react-bootstrap'
 import { FaStar, FaRegStar, FaUsers, FaQuestionCircle } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
-
+import error from '../../assets/error.jpg'
 const QuizzCard = ({ quiz }) => {
   const mockQuiz = quiz || {
     id: '1',
@@ -47,11 +47,15 @@ const QuizzCard = ({ quiz }) => {
       e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'
     }}>
       <div className="position-relative">
-        <Card.Img 
+      <Card.Img 
           variant="top" 
-          src={mockQuiz.image} 
+          src={mockQuiz.image || error}
           alt={mockQuiz.title}
           style={{ height: '180px', objectFit: 'cover' }}
+          onError={(e) => {
+            e.target.onerror = null; // Prevent infinite fallback loop
+            e.target.src = error;
+          }}
         />
         <Badge 
           bg="primary" 

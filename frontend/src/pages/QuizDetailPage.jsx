@@ -12,7 +12,7 @@ import CreateLoading from '../components/common/CreateLoading';
 import Ranking from '../components/common/Ranking';
 import { getTopTenPlayers } from '../api/resuiltAPI';
 import RateQuiz from '../components/Quizz/RateQuiz';
-
+import error from '../assets/error.jpg'
 const QuizDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -169,9 +169,13 @@ const QuizDetailPage = () => {
             <div className="position-relative">
               <Card.Img 
                 variant="top" 
-                src={quiz.quizze.image} 
+                src={quiz.quizze.image || error} 
                 alt={quiz.quizze.title}
                 style={{ height: '280px', objectFit: 'cover' }}
+                 onError={(e) => {
+                            e.target.onerror = null; // Prevent infinite fallback loop
+                            e.target.src = error;
+                        }}
               />
               <div className="position-absolute bottom-0 start-0 w-100 p-3" 
                    style={{ 
