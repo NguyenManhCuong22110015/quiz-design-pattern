@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { useAnimations } from "../hooks/useAnimations";
 import { Zap, ArrowLeft, Volume2, MoreHorizontal, Check } from "lucide-react";
-import { Button } from "../ui/button";
 import { useState, useEffect } from "react";
 
 export default function GameDemoSection() {
@@ -56,9 +55,9 @@ export default function GameDemoSection() {
                     ))}
                   </div>
                   <div className="mt-4">
-                    <Button className="btn btn-primary px-4 py-2 fw-medium">
+                    <button className="btn btn-primary px-4 py-2 fw-medium">
                       Try This Game
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -132,10 +131,10 @@ export default function GameDemoSection() {
             </div>
 
             <div className="mt-4">
-              <Button className="btn btn-primary btn-lg d-flex align-items-center">
+              <button className="btn btn-primary btn-lg d-flex align-items-center">
                 Explore All Games
                 <ArrowLeft className="ms-2" style={{ transform: "rotate(180deg)" }} />
-              </Button>
+              </button>
             </div>
           </motion.div>
         </div>

@@ -1,4 +1,3 @@
-import { Button } from "./../ui/button";
 import { motion } from "framer-motion";
 import { useAnimations } from "./../hooks/useAnimations";
 
@@ -29,17 +28,17 @@ export default function CTASection() {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Button size="lg" className="px-4 py-3 bg-white text-primary fw-bold shadow">
+          <button size="lg" className="px-4 py-3 bg-white text-primary fw-bold shadow">
             Get Started – It's Free
-          </Button>
-          <Button
+          </button>
+          <button
             size="lg"
-            variant="outline"
+           
             className="px-4 py-3 border border-white text-white fw-bold"
             style={{ backgroundColor: "transparent" }}
           >
             Learn More
-          </Button>
+          </button>
         </motion.div>
 
         {/* Stats Section */}

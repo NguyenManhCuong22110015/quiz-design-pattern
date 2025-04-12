@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { useAnimations } from "./../hooks/useAnimations";
-import { Button } from "./../ui/button";
 import "./../../styles/DailyChallengesSection.css";
 import error from '../../assets/error.jpg'
 import { Link } from "react-router-dom";
@@ -98,10 +97,10 @@ export default function DailyChallengesSection({ challenges = [] }) {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <a href="/category" className="text-decoration-none">
-              <Button variant="link" className="text-light d-flex align-items-center">
+              <button className="text-light d-flex align-items-center">
                 See All Challenges
                 <ChevronRight className="ms-1" size={18} />
-              </Button>
+              </button>
             </a>
           </motion.div>
         </div>
@@ -188,7 +187,7 @@ export default function DailyChallengesSection({ challenges = [] }) {
 
 
                     </div>
-                    <Button 
+                    <button 
                       size="sm" 
                       className="btn-play btn-sm px-3 text-white bg-primary"
                       style={{
@@ -200,7 +199,7 @@ export default function DailyChallengesSection({ challenges = [] }) {
                       }}
                     >
                       Play
-                    </Button>
+                    </button>
                   </div>
                   
                 </div>
