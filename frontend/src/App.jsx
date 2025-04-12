@@ -15,7 +15,7 @@ import QuestionPage from './pages/Admin/QuestionsPage'
 import QuestionsPage from './pages/QuestionsPage'
 import CreateRoomPage from './pages/RoomQuestion/CreateRoomPage'
 import RoomListPage from './pages/RoomQuestion/RoomListPage'
-import MainPage from './pages/MainPage'
+
 import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import AuthMiddleware from './middleware/AuthMiddleware';
@@ -26,6 +26,10 @@ import GenerateQuiz from './pages/GenerateQuiz'
 import QuizDetailPage from './pages/QuizDetailPage'
 import AuthProvider from './contexts/AuthContext'
 import CategoryPage from './pages/Admin/CategoryPage'
+
+import CategoriesPage from './pages/CategoryPage'
+import MainPage from './pages/MainPage'
+import { LeaderboardPage } from './pages/LeaderboardPage'
 
 
 const globalStyles = {
@@ -45,7 +49,9 @@ function App() {
     <main>
       <Router>
           <Routes>
+              <Route path="/category" element={<CategoriesPage/>} />
               <Route path="/" element={<MainPage/>} />
+              <Route path="/leaderboard" element={<LeaderboardPage/>} />
               <Route path="/questions" element={<QuestionsPage />} />
               <Route path="/admin" element={
                  <AuthMiddleware>

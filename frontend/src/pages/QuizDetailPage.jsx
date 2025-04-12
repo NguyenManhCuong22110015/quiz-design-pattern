@@ -7,7 +7,7 @@ import { getCommentsByQuiz, addComment } from '../api/commentApi';
 import { getTopPlayers } from '../api/scoreApi';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import NavBar from '../layout/NavBar';
+import NavBar from '../layout/NavBar'
 import CreateLoading from '../components/common/CreateLoading';
 import Ranking from '../components/common/Ranking';
 import { getTopTenPlayers } from '../api/resuiltAPI';

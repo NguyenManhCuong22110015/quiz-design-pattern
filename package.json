@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.487.0",
+    "radix-ui": "^1.2.0",
+    "wouter": "^3.6.0"
+  }
+}

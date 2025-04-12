@@ -73,3 +73,8 @@ export async function saveQuestionsToQuiz(quizId, allQuestions){
     const response = await API.put(`api/quizzes/save-questions/${quizId}`, {allQuestions});
     return response.data;
 }   
+
+export async function getChallengesQuiz() {
+    const response = await API.get("api/quizzes/getchallenges");
+    return response.data;
+}

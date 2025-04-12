@@ -1,59 +1,52 @@
-import {useEffect, useState} from 'react'
-import Navbar from '../layout/NavBar'
-import Choice from '../components/Choice'
-import "../styles/Footer.css"
-import fight from "/imgs/swords.png"
-import partners from "/imgs/partners.png"
-import CheckAuth from '../components/common/CheckAuth'
-import QuizzCard from '../components/Quizz/QuizzCard'
-import ListQuizzByCate from '../components/Quizz/ListQuizzByCate'
-import { getAll } from '../api/categoryAPI'
-
-import ChoiceType from '../components/Main/ChoiceType'
-import Footer from '../components/common/Footer'
-import Chatbot from '../components/common/Chatbot'
+import React, { useEffect, useState } from 'react'
+import NavBar from '../layout/NavBar'
+import HeroSection from '../components/Main/HeroSection'
+import DailyChallengesSection from '../components/Main/DailyChallengesSection'
+import CategoriesSection from '../components/Main/CategoriesSection'
+import FeaturesSection from '../components/Main/FeaturesSection'
+import GameDemoSection from '../components/Main/GameDemoSection'
+import CTASection from '../components/Main/CTASection'
+import Footer from '../components/Main/Footer'
+import "./../styles/DailyChallengesSection.css";
+import { use } from 'react'
+import { getChallengesQuiz } from '../api/quizzApi'
 
 
-const token = localStorage.getItem('token');
 
-const MainPage = () => {
- 
-  const [categories, setCategories] = useState([])
+const MainPa = () => {
+
+  const [challenges,setChallenges] = useState([]);
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchChallenges = async () => {
       try {
-        const data = await getAll()
-        
-        const jsonData = JSON.stringify(data)
-        setCategories(data)
-        console.log("data: " + data)
-        
+        const response = await getChallengesQuiz();
+        console.log(response)
+      
+        const data = await response;
+        setChallenges(data);
+        console.log(challenges)
       } catch (error) {
-        console.error("Error fetching categories:", error)
+        console.error('Error fetching challenges:', error);
       }
-    }
+    };
 
-    fetchCategories()
-  }
-  , [])
+    fetchChallenges();  
+  }, [])
+
 
   return (
-    <div className="container">
-      <Navbar/>
-      <div className="container d-flex align-items-center justify-content-center" style={{ minHeight: "60vh" }}>
-      <ChoiceType />      
-      </div>
-      <div>
-      {categories.map((category) => (
-         <ListQuizzByCate category={category} key={category._id} />
-        
-      ))}
-    </div>
-    <Footer/>
-    <Chatbot/>
+    <div className="bg-gray-50 font-sans text-gray-800">
+        <NavBar/>
+        <HeroSection/>
+        <FeaturesSection />
+        <DailyChallengesSection challenges={challenges} />
+      <CategoriesSection  />
+      <GameDemoSection />
+      <CTASection />
+      <Footer />
     </div>
   )
 }
 
-export default MainPage
+export default MainPa

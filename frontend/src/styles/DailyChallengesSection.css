@@ -1,0 +1,89 @@
+.hover-card {
+    cursor: pointer;
+  }
+  
+  .hover-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+  }
+  
+  .hover-card:hover .card-header-hover {
+    filter: brightness(1.1);
+  }
+  
+  .hover-card:hover .challenge-emoji {
+    transform: scale(1.15);
+    transition: transform 0.3s ease;
+  }
+  
+  .btn-play {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  
+  .btn-play:before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 100%;
+    background-color: rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+    z-index: -1;
+  }
+  
+  .hover-card:hover .btn-play {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  
+  .hover-card:hover .btn-play:before {
+    width: 100%;
+  }
+
+  .category-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    background-color: aqua !important;
+   
+  }
+  
+  .category-card:hover .category-icon {
+    transform: scale(1.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .category-card:hover .category-emoji {
+    transform: scale(1.15);
+  }
+  
+  .category-card:hover .category-bg-effect {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  
+  .category-card:hover .category-border-effect {
+    opacity: 1;
+  }
+  
+  .category-card::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.8));
+    transform: translateY(0);
+    transition: transform 0.4s ease-out;
+    z-index: 1;
+  }
+  
+  .category-card:hover::after {
+    transform: translateY(-100%);
+  }
+  .image-challenge{
+    
+  }

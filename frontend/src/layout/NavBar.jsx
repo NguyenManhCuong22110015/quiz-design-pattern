@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FaSearch, FaUser, FaQuestionCircle } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { Link } from "wouter";
+import { AnimatePresence, motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
+import { FaUser, FaQuestionCircle } from "react-icons/fa";
 import { IoLogOut } from "react-icons/io5";
 import { RiAdminLine } from "react-icons/ri";
-import "../styles/NavBar.css";
+import "./../styles/NavBar.css";
 
-const NavBar = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+export default function NavBar() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [user, setUser] = useState(null);
-  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
-  const navigate = useNavigate();
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -47,139 +47,228 @@ const NavBar = () => {
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
     setUser(null);
-    navigate('/login');
+    window.location.href = '/login';
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
-      setSearchTerm("");
-    }
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   return (
-    <header className="header">
-      <nav className="navbar navbar-expand-lg">
-        <div className="container-fluid">
-          <Link className="navbar-brand" to="/">
-            <strong>QUIZZ</strong>
-          </Link>
+    <header className="bg-white shadow-sm fixed w-100 z-10">
+      <nav className="container py-3 d-flex justify-content-between align-items-center">
+        {/* Logo */}
+        <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center justify-content-center " style={{ width: 40, height: 40 }}>
+            <a href="/"><img src="/imgs/logov2.png" style={{"width": "150%"}} alt="Logo" /></a>
+          </div>
+          <span className="fs-5 fw-bold text-dark d-none d-sm-inline ms-2">Quizz</span>
+        </div>
 
-          <button
-            className="navbar-toggler"
-            type="button"
-            onClick={() => setIsNavCollapsed(!isNavCollapsed)}
-            aria-controls="navbarContent"
-            aria-expanded={!isNavCollapsed}
-            aria-label="Toggle navigation"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
+        {/* Navigation */}
+        <ul className="d-none d-md-flex list-unstyled m-0 gap-4 align-items-center">
+          <li className="nav-item">
+            <a href="/room/list" className="nav-link text-secondary text-decoration-none fw-medium">Rooms</a>
+          </li>
+          <li className="nav-item">
+            <a href="category" className="nav-link text-secondary text-decoration-none fw-medium">Categories</a>
+          </li>
+          <li className="nav-item">
+            <a href="leaderboard" className="nav-link text-secondary text-decoration-none fw-medium">Leaderboard</a>
+          </li>
+          <li className="nav-item">
+            <a href="/generate" className="nav-link text-secondary text-decoration-none fw-medium">Create</a>
+          </li>
+        </ul>
 
-          <div
-            className={`${isNavCollapsed ? 'collapse' : ''} navbar-collapse`}
-            id="navbarContent"
-          >
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              <li className="nav-item">
-                <Link className="nav-link" to="/quizzes">Quizzes</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/generate">Create Quiz</Link>
-              </li>
-              <li className="nav-item">
-                <Link className="nav-link" to="/room/list">Rooms</Link>
-              </li>
-            </ul>
-
-            <div className="d-flex align-items-center nav-right">
-              <form className="d-flex search-form me-3" onSubmit={handleSearch}>
-                <div className="input-group">
-                  <input
-                    type="search"
-                    className="form-control search-input"
-                    placeholder="Search..."
-                    aria-label="Search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+        {/* Auth Buttons or User Menu */}
+        <div className="d-flex align-items-center gap-2">
+          {!user ? (
+            <>
+              <a href="/login" className="btn btn-outline-success d-none d-sm-inline">Log In</a>
+              <a href="/login" className="btn btn-success">Sign Up</a>
+            </>
+          ) : (
+            <div className="user-menu-wrapper position-relative" ref={userMenuRef}>
+              <button
+                className="btn d-flex align-items-center gap-2"
+                type="button"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                aria-expanded={showUserMenu}
+              >
+                {user.profileImage ? (
+                  <img
+                    src={user.profileImage}
+                    alt={user.name || "User"}
+                    className="rounded-circle"
+                    style={{ width: "32px", height: "32px", objectFit: "cover" }}
                   />
-                  <button className="btn btn-outline-dark search-btn" type="submit">
-                    <FaSearch />
-                  </button>
-                </div>
-              </form>
+                ) : (
+                  <div className="rounded-circle bg-success bg-opacity-25 text-success d-flex align-items-center justify-content-center" 
+                       style={{ width: "32px", height: "32px" }}>
+                    <FaUser />
+                  </div>
+                )}
+                <span className="d-none d-sm-inline text-dark">{user.name || user.username}</span>
+              </button>
 
-              {!user ? (
-                <Link to="/login" className="btn btn-outline-success login-btn">
-                  Log in
-                </Link>
-              ) : (
-                <div className="user-menu-wrapper" ref={userMenuRef}>
-                  <button
-                    className="btn user-menu-button"
-                    type="button"
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    aria-expanded={showUserMenu}
+              {/* User dropdown menu */}
+              <AnimatePresence>
+                {showUserMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="position-absolute end-0 mt-2 py-2 bg-white rounded shadow-sm"
+                    style={{ width: "200px", zIndex: 1000 }}
                   >
-                    {user.profileImage ? (
-                      <img
-                        src={user.profileImage}
-                        alt={user.name || "User"}
-                        className="user-avatar"
-                      />
-                    ) : (
-                      <div className="user-icon">
-                        <FaUser />
-                      </div>
-                    )}
-                    <span className="user-name">{user.name || user.username}</span>
-                  </button>
-
-                  <div
-                    className={`user-dropdown ${showUserMenu ? 'show' : ''}`}
-                  >
-                    <Link
-                      to="/profile"
-                      className="dropdown-item"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <FaUser className="item-icon" />
+                    <a href="/profile" className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark hover-bg-light">
+                      <FaUser className="text-secondary" size={16} />
                       <span>Profile</span>
-                    </Link>
+                    </a>
                     
                     {user.isAdmin && (
                       <>
-                        <div className="dropdown-divider"></div>
-                        <Link
-                          to="/admin"
-                          className="dropdown-item"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <RiAdminLine className="item-icon" />
+                        <div className="dropdown-divider my-2"></div>
+                        <a href="/admin" className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark hover-bg-light">
+                          <RiAdminLine className="text-secondary" size={16} />
                           <span>Admin Panel</span>
-                        </Link>
+                        </a>
                       </>
                     )}
                     
-                    <div className="dropdown-divider"></div>
+                    <div className="dropdown-divider my-2"></div>
                     <button
-                      className="dropdown-item logout-item"
+                      className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-danger border-0 bg-transparent w-100 text-start hover-bg-light"
                       onClick={handleLogout}
                     >
-                      <IoLogOut className="item-icon" />
+                      <IoLogOut size={16} />
                       <span>Logout</span>
                     </button>
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </div>
+          )}
+
+          {/* Mobile Menu Toggle */}
+          <button className="btn btn-link text-secondary d-md-none p-0" onClick={toggleMobileMenu}>
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </nav>
-      <div className="header-divider"></div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-white shadow-sm d-md-none"
+          >
+            <div className="container py-3">
+              <ul className="list-unstyled mb-0">
+                <li className="mb-2 mobile-nav-item">
+                  <a href="/room/list" className="mobile-nav-link text-secondary text-decoration-none d-block py-2">Rooms</a>
+                </li>
+                <li className="mb-2 mobile-nav-item">
+                  <a href="category" className="mobile-nav-link text-secondary text-decoration-none d-block py-2">Categories</a>
+                </li>
+                <li className="mb-2 mobile-nav-item">
+                  <a href="leaderboard" className="mobile-nav-link text-secondary text-decoration-none d-block py-2">Leaderboard</a>
+                </li>
+                <li className="mb-2 mobile-nav-item">
+                  <a href="/generate" className="mobile-nav-link text-secondary text-decoration-none d-block py-2">Create</a>
+                </li>
+                {!user && (
+                  <>
+                    <li className="mb-2 pt-2">
+                      <a href="/login" className="btn btn-outline-success w-100">Log In</a>
+                    </li>
+                    <li className="pt-1">
+                      <a href="/register" className="btn btn-success w-100">Sign Up</a>
+                    </li>
+                  </>
+                )}
+                {user && (
+                  <>
+                    <li className="mb-2 mobile-nav-item pt-2">
+                      <a href="/profile" className="mobile-nav-link text-secondary text-decoration-none d-block py-2">
+                        <FaUser className="me-2" /> Profile
+                      </a>
+                    </li>
+                    {user.isAdmin && (
+                      <li className="mb-2 mobile-nav-item">
+                        <a href="/admin" className="mobile-nav-link text-secondary text-decoration-none d-block py-2">
+                          <RiAdminLine className="me-2" /> Admin Panel
+                        </a>
+                      </li>
+                    )}
+                    <li className="pt-1">
+                      <button onClick={handleLogout} className="btn btn-outline-danger w-100">
+                        <IoLogOut className="me-2" /> Logout
+                      </button>
+                    </li>
+                  </>
+                )}
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style jsx>{`
+        /* Nav link hover effects */
+        .nav-item {
+          position: relative;
+        }
+        
+        .nav-link {
+          padding: 0.5rem 0;
+          transition: all 0.3s ease;
+          position: relative;
+        }
+        
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          width: 0;
+          height: 2px;
+          bottom: 0;
+          left: 0;
+          background-color: var(--bs-success);
+          transition: width 0.3s ease;
+        }
+        
+        .nav-item:hover .nav-link {
+          color: var(--bs-success) !important;
+          transform: translateY(-2px);
+        }
+        
+        .nav-item:hover .nav-link::after {
+          width: 100%;
+        }
+        
+        /* Mobile nav hover effects */
+        .mobile-nav-link {
+          border-radius: 8px;
+          transition: all 0.3s ease;
+          padding-left: 10px !important;
+        }
+        
+        .mobile-nav-item:hover .mobile-nav-link {
+          color: var(--bs-success) !important;
+          background-color: rgba(var(--bs-success-rgb), 0.1);
+          padding-left: 15px !important;
+        }
+        
+        /* Dropdown hover effect */
+        .hover-bg-light:hover {
+          background-color: rgba(0,0,0,0.05);
+        }
+      `}</style>
     </header>
   );
-};
-
-export default NavBar;
+}

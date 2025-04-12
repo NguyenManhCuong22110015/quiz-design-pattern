@@ -769,3 +769,46 @@ i {
     padding-right: 0.75rem;
   }
 }
+
+.nav-item {
+  position: relative;
+}
+
+.nav-link {
+  padding: 0.5rem 0;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: var(--bs-primary);
+  transition: width 0.3s ease;
+}
+
+.nav-item:hover .nav-link {
+  color: var(--bs-primary) !important;
+  transform: translateY(-2px);
+}
+
+.nav-item:hover .nav-link::after {
+  width: 100%;
+}
+
+/* Mobile Navigation Hover Effects */
+.mobile-nav-link {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  padding-left: 10px !important;
+}
+
+.mobile-nav-item:hover .mobile-nav-link {
+  color: var(--bs-primary) !important;
+  background-color: rgba(var(--bs-primary-rgb), 0.1);
+  padding-left: 15px !important;
+}
