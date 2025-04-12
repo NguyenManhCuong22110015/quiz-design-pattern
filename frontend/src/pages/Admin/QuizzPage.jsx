@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import NavBarLeft from '../../components/Admin/NavBarLeft'
 import '../../styles/Assessments.css'
 import NavBarTop from '../../components/Admin/NavBarTop'
-import { createQuiz, getQuizzesByUserId, updateQuiz } from '../../api/quizzApi'
+import { createQuiz, deleteQuiz, getQuizzesByUserId, updateQuiz } from '../../api/quizzApi'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { Link } from 'react-router-dom'
 import AddQuizzModal from '../../components/Admin/AddQuizModal'
@@ -24,11 +24,13 @@ const QuizzPage = () => {
   const handleCloseModal = () => setShowModal(false);
   const handleOpenEditModal = (quiz) => {
     setSelectedQuiz(quiz);
+    
     setShowEditModal(true);
   };
   
   const handleCloseEditModal = () => {
     setShowEditModal(false);
+    console.log('Selected quiz:', selectedQuiz);
     setSelectedQuiz(null);
   };
   const handleSaveData = async (data) => {
@@ -185,8 +187,17 @@ const QuizzPage = () => {
      setIsLoading(false);
   }
   , [])
-  const handleDelete = () => {
-    alert('Deleted')
+  const handleDelete = async (id) => {
+    try {
+        await deleteQuiz(id);
+        setQuizzes(prevQuizzes => prevQuizzes.filter(quiz => quiz._id !== id));
+        showSuccess('Quiz deleted successfully!');
+    }
+    catch (error) {
+      console.error('Error deleting quiz:', error);
+      showError('Failed to delete quiz!');
+    }
+
   };
   if(isLoading) {
     return <CreateLoading/>

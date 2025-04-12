@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import {uploadImage} from '../../api/mediaApi';
+import {getAll} from '../../api/categoryyApi';
+
 const EditQuizModal = ({ show, handleClose, quiz, onUpdate }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -15,16 +17,20 @@ const EditQuizModal = ({ show, handleClose, quiz, onUpdate }) => {
   const fileInputRef = useRef(null);
 
   // Categories list - you can fetch this from API if needed
-  const categories = [
-    'Programming', 
-    'Mathematics', 
-    'Science', 
-    'History', 
-    'Geography', 
-    'Literature',
-    'General Knowledge'
-  ];
-
+  const [categories, setCategories] = useState([]);
+ useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await getAll();
+        console.log('Categories fetched:', response);
+        setCategories(response);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+    fetchCategories();
+  }
+  , []);
   // Difficulty levels
   const levels = [
     { value: 'easy', label: 'Easy' },
@@ -43,6 +49,7 @@ const EditQuizModal = ({ show, handleClose, quiz, onUpdate }) => {
       });
       setPreviewImage(quiz.image || '');
     }
+    console.log('Quiz data:', quiz);
   }, [quiz]);
 
   const handleInputChange = (e) => {
@@ -184,7 +191,7 @@ const EditQuizModal = ({ show, handleClose, quiz, onUpdate }) => {
                 >
                   <option value="">Select a category</option>
                   {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
+                    <option key={category._id} value={category._id}>{category.name}</option>
                   ))}
                 </Form.Select>
               </Form.Group>

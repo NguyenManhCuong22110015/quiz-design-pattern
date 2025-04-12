@@ -6,6 +6,7 @@ import { FaUser, FaQuestionCircle } from "react-icons/fa";
 import { IoLogOut } from "react-icons/io5";
 import { RiAdminLine } from "react-icons/ri";
 import "./../styles/NavBar.css";
+import { MdQuiz } from "react-icons/md";
 
 export default function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -121,7 +122,7 @@ export default function NavBar() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                     className="position-absolute end-0 mt-2 py-2 bg-white rounded shadow-sm"
-                    style={{ width: "200px", zIndex: 1000 }}
+                    style={{ width: "200px", zIndex: 1000, border: "1px solid rgba(0, 0, 0, 0.1)" }}
                   >
                     <a href="/profile" className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark hover-bg-light">
                       <FaUser className="text-secondary" size={16} />
@@ -138,6 +139,11 @@ export default function NavBar() {
                       </>
                     )}
                     
+                    <div className="dropdown-divider my-2"></div>
+                    <a href="/admin/quizz" className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-dark hover-bg-light">
+                      <MdQuiz className="text-success" size={16} />
+                      <span className="text-success">Your Quizzes</span>
+                    </a>
                     <div className="dropdown-divider my-2"></div>
                     <button
                       className="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-danger border-0 bg-transparent w-100 text-start hover-bg-light"

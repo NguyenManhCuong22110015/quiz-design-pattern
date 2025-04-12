@@ -78,3 +78,9 @@ export async function getChallengesQuiz() {
     const response = await API.get("api/quizzes/getchallenges");
     return response.data;
 }
+
+
+export async function deleteQuiz(quizId) {
+    const response = await API.delete(`api/quizzes/delete/${quizId}`);
+    return response.data;
+}

@@ -83,15 +83,12 @@ router.get("/getByCategory", async (req, res) => {
 
 router.post("/create", async (req, res) => {
   const { title, description, category, level, createdBy, imageUrl } = req.body;
-
-
-  const categoryId = await getIdByName(category) 
   
   try {
     const quizze = new Quizze({
       title:title,
       description:description,
-      category:categoryId,
+      category:category,
       image: imageUrl || '', 
       level:level,
       createdBy:createdBy,
@@ -103,6 +100,27 @@ router.post("/create", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
+router.delete('/delete/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const quizze = await Quizze.findByIdAndDelete(id);
+    
+    if (!quizze) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+    
+    // Xóa các câu hỏi liên quan đến quiz này
+    await Question.deleteMany({ quizId: id });
+    
+    res.json({ message: 'Quiz deleted successfully' });
+  } catch (error) {
+    console.error("Error deleting quiz:", error);
+    res.status(500).json({ message: error.message });
+  }
+}
+);
 
 router.delete('/delete-image/:publicId', async (req, res) => {
   try {

@@ -3,7 +3,7 @@ import {useEffect, useState} from 'react'
 import "../styles/Footer.css"
 
 import ListQuizzByCate from '../components/Quizz/ListQuizzByCate'
-import { getAll } from '../api/categoryAPI'
+import { getAll } from '../api/categoryyApi'
 
 import ChoiceType from '../components/Main/ChoiceType'
 import Footer from '../components/common/Footer'

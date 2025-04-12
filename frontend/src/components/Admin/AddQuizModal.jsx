@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import axios from 'axios';
 import { showSuccess, showError } from '../common/Notification';
 import { uploadImage } from '../../api/mediaApi';
 import CreateLoading from '../common/CreateLoading';
-
+import {getAll} from '../../api/categoryyApi';
 
 const AddQuizzModal = ({ show, handleClose, onSave }) => {
   const [title, setTitle] = useState('');
@@ -14,11 +14,26 @@ const AddQuizzModal = ({ show, handleClose, onSave }) => {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  
+  const [categoryList, setCategoryList] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await getAll();
+        console.log('Categories fetched:', response);
+        setCategoryList(response);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+    fetchCategories();
+  }
+  , []);
+
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setCategory('Animal');
+    setCategory(category[0].name || '');
     setLevel('easy');
     setImage(null);
     setImagePreview(null);
@@ -59,6 +74,8 @@ const AddQuizzModal = ({ show, handleClose, onSave }) => {
         level,
         imageUrl
       };
+
+      console.log('Quiz data:', quizData);
       
       onSave(quizData);
       resetForm();
@@ -116,8 +133,11 @@ const AddQuizzModal = ({ show, handleClose, onSave }) => {
               onChange={handleCategoryChange}
               required
             >
-              <option value="General Knowledge">General Knowledge</option>
-              <option value="Animal">Animal</option>
+              {categoryList.map((cat) => (
+                <option key={cat._id} value={cat._id}>
+                  {cat.name}
+                </option>
+              ))}
               
             </Form.Select>
            
