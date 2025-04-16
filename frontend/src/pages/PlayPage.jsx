@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import QuestionGame from '../components/Questions/QuestionGame'
 import { getQuestionsByQuizzId } from '../api/questionApi'
-import { Button, Container, ProgressBar, Badge } from 'react-bootstrap'
+import { Button, Container, ProgressBar, Badge, Row, Col, Card } from 'react-bootstrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, useNavigate } from 'react-router-dom'
 import NavBar from '../layout/NavBar'
@@ -9,6 +9,7 @@ import CreateLoading from '../components/common/CreateLoading'
 import { useAuth } from '../contexts/AuthContext'
 import { checkProcess, initialResult, addAnswerToResult, completeResult } from '../api/resuiltAPI'
 import { showError, showSuccess } from '../components/common/Notification'
+import { FiClock, FiAward, FiCheckCircle, FiHelpCircle, FiChevronRight, FiFlag } from 'react-icons/fi'
 
 const PlayPage = () => {
     const [questions, setQuestions] = useState([]);
@@ -410,13 +411,14 @@ const PlayPage = () => {
         }
     };
     
-    // Component đếm ngược
+    // Modernized Countdown Overlay
     const CountdownOverlay = () => (
         <div 
             className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
             style={{ 
-                background: 'rgba(0, 0, 0, 0.8)',
-                zIndex: 1050
+                background: 'rgba(0, 0, 0, 0.85)',
+                zIndex: 1050,
+                backdropFilter: 'blur(5px)'
             }}
         >
             <AnimatePresence mode="wait">
@@ -430,155 +432,333 @@ const PlayPage = () => {
                 >
                     {countdown > 0 ? (
                         <div className="d-flex flex-column align-items-center">
-                            <h1 className="display-1 text-white fw-bold">{countdown}</h1>
-                            <p className="text-white fs-4 mt-3">Get Ready!</p>
+                            <div className="position-relative">
+                                <motion.div 
+                                    className="position-absolute top-50 start-50 translate-middle"
+                                    style={{ 
+                                        width: '150px', 
+                                        height: '150px', 
+                                        borderRadius: '50%',
+                                        border: '4px solid rgba(255,255,255,0.2)'
+                                    }}
+                                    animate={{
+                                        scale: [1, 1.2, 1],
+                                    }}
+                                    transition={{
+                                        duration: 1,
+                                        repeat: Infinity,
+                                        repeatType: 'loop'
+                                    }}
+                                />
+                                <h1 className="display-1 text-white fw-bold position-relative">{countdown}</h1>
+                            </div>
+                            <p className="text-white fs-4 mt-4 fw-light">Get Ready!</p>
                         </div>
                     ) : (
-                        <div className="d-flex flex-column align-items-center">
+                        <motion.div 
+                            className="d-flex flex-column align-items-center"
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 0.5 }}
+                        >
                             <h1 className="display-1 text-success fw-bold">GO!</h1>
-                            <p className="text-white fs-4 mt-3">Good luck!</p>
-                        </div>
+                            <p className="text-white fs-4 mt-3 fw-light">Good luck!</p>
+                        </motion.div>
                     )}
                 </motion.div>
             </AnimatePresence>
         </div>
     );
     
-    if (loading) {
-        return <CreateLoading />;
-    }
-    
+    // Enhanced Quiz Complete Screen
     if (quizComplete) {
         return (
-            <Container className="text-center py-5">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <h2 className="mb-4">Quiz Complete! 🎉</h2>
-                    <h3 className="mb-3">Your Score: {score} points</h3>
-                    <ProgressBar 
-                        now={(score / (questions.length * 100)) * 100} 
-                        variant="success" 
-                        className="mb-4" 
-                        style={{ height: "15px", borderRadius: "10px" }}
-                    />
-                    <div className="mb-4">
-                        <p>Số câu trả lời đúng: {userAnswers.filter(a => a.isCorrect).length}/{questions.length}</p>
-                        <p>Độ chính xác: {((userAnswers.filter(a => a.isCorrect).length / questions.length) * 100).toFixed(2)}%</p>
-                    </div>
-                    <Button variant="primary" size="lg" onClick={restartQuiz} className="me-2">
-                        Play Again
-                    </Button>
-                    <Button variant="outline-primary" size="lg" onClick={() => navigate(`/quiz-detail/${id}`)}>
-                        Back to Quiz Details
-                    </Button>
-                </motion.div>
-            </Container>
+            <>
+                <NavBar />
+                <Container className="py-5">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="text-center mb-5"
+                    >
+                        <div className="d-inline-block p-3 bg-success bg-opacity-10 rounded-circle mb-3">
+                            <FiAward size={50} className="text-success" />
+                        </div>
+                        <h2 className="display-5 fw-bold mb-2">Quiz Complete!</h2>
+                        <p className="text-muted fs-5">Great job! Here's how you did.</p>
+                    </motion.div>
+
+                    <Row className="justify-content-center">
+                        <Col lg={8}>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.1 }}
+                            >
+                                <Card className="border-0 shadow-sm mb-4">
+                                    <Card.Body className="p-4">
+                                        <Row className="text-center">
+                                            <Col md={4} className="mb-3 mb-md-0">
+                                                <h5 className="text-muted mb-2">Score</h5>
+                                                <h3 className="display-6 fw-bold text-primary">{score}</h3>
+                                                <p className="small text-muted">points</p>
+                                            </Col>
+                                            <Col md={4} className="mb-3 mb-md-0">
+                                                <h5 className="text-muted mb-2">Accuracy</h5>
+                                                <h3 className="display-6 fw-bold text-success">
+                                                    {((userAnswers.filter(a => a.isCorrect).length / questions.length) * 100).toFixed()}%
+                                                </h3>
+                                                <p className="small text-muted">correct answers</p>
+                                            </Col>
+                                            <Col md={4}>
+                                                <h5 className="text-muted mb-2">Completion</h5>
+                                                <h3 className="display-6 fw-bold text-info">
+                                                    {userAnswers.filter(a => a.isCorrect).length}/{questions.length}
+                                                </h3>
+                                                <p className="small text-muted">questions</p>
+                                            </Col>
+                                        </Row>
+
+                                        <div className="mt-4">
+                                            <h6 className="mb-2">Your Performance</h6>
+                                            <ProgressBar 
+                                                now={(score / (questions.length * 100)) * 100} 
+                                                variant="success" 
+                                                className="mb-4" 
+                                                style={{ height: "12px", borderRadius: "6px" }}
+                                            />
+                                        </div>
+                                    </Card.Body>
+                                </Card>
+
+                                <div className="d-flex flex-column flex-md-row justify-content-center gap-3 mt-4">
+                                    <Button 
+                                        variant="primary" 
+                                        size="lg" 
+                                        onClick={restartQuiz} 
+                                        className="px-4 py-3 fw-medium"
+                                    >
+                                        <FiFlag className="me-2" />
+                                        Play Again
+                                    </Button>
+                                    <Button 
+                                        variant="outline-secondary" 
+                                        size="lg" 
+                                        onClick={() => navigate(`/quiz-detail/${id}`)} 
+                                        className="px-4 py-3 fw-medium"
+                                    >
+                                        Back to Quiz Details
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        </Col>
+                    </Row>
+                </Container>
+            </>
         );
     }
 
+    if (loading) {
+        return <CreateLoading />;
+    }
+
+    // Main Quiz Interface
     return (
         <>
             {showCountdown && <CountdownOverlay />}
             
-            <Container className="position-relative py-4">
+            <div className="min-vh-100" style={{
+                background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
+                backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")',
+                backgroundAttachment: 'fixed'
+            }}>
                 <NavBar/>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Quiz Progress</h4>
-                    <div className="d-flex align-items-center">
-                        <Button 
-                            variant="outline-primary" 
-                            size="sm" 
-                            className="me-3"
-                            onClick={() => {
-                                if (!goToUnansweredQuestion()) {
-                                    showError("Tất cả câu hỏi đã được trả lời!");
-                                    
-                                    // Nếu tất cả câu hỏi đã trả lời, hiển thị kết quả
-                                    if (userAnswers.length >= questions.length) {
-                                        handleFinishQuiz();
-                                    }
-                                }
-                            }}
-                        >
-                            Câu chưa trả lời
-                        </Button>
-                        <span className="fw-bold">Question {currentQuestionIndex + 1}/{questions.length}</span>
-                    </div>
-                </div>
-                
-                <ProgressBar 
-                    now={((currentQuestionIndex + 1) / questions.length) * 100} 
-                    variant="primary" 
-                    className="mb-4"
-                    style={{ height: "8px", borderRadius: "4px" }}
-                />
-                
-                {/* Hiển thị thông báo nếu câu hỏi đã được trả lời và không thể thay đổi */}
-                {userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) && disableAnswerChange && (
-                    <div className="alert alert-warning mb-3">
-                        <i className="fas fa-lock me-2"></i>
-                        Câu hỏi này đã được trả lời và không thể thay đổi. 
-                        <Button 
-                            variant="link" 
-                            className="p-0 ms-2" 
-                            onClick={goToUnansweredQuestion}
-                        >
-                            Chuyển đến câu chưa trả lời
-                        </Button>
-                    </div>
-                )}
-                
-                {/* Question content */}
-                {questions.length > 0 && 
-                    <QuestionGame 
-                        question={questions[currentQuestionIndex]} 
-                        questionNumber={currentQuestionIndex + 1}
-                        totalQuestions={questions.length}
-                        onAnswer={handleAnswer}
-                        defaultAnswer={userAnswers.find(a => a.questionId === questions[currentQuestionIndex]?._id)?.selectedOption}
-                        isLocked={userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) && disableAnswerChange}
-                    />
-                }
-                
-                {/* Navigation button */}
-                <div className="text-center mt-4 d-flex justify-content-between">
-                    <div className="score-display">
-                        <h5>Score: {score} points</h5>
-                        <div className="mt-2">
-                            <Badge bg="info">
-                                {userAnswers.length} / {questions.length} câu đã trả lời
-                            </Badge>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        {currentQuestionIndex < questions.length - 1 ? (
-                            <Button 
-                                variant="primary" 
-                                size="lg" 
-                                onClick={handleNextQuestion}
-                                disabled={!answered && !userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id)}
+                <Container className="py-4">
+                    <Row className="justify-content-center">
+                        <Col lg={10}>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
                             >
-                                Next Question
-                            </Button>
-                        ) : (
-                            <Button 
-                                variant="success" 
-                                size="lg" 
-                                onClick={handleFinishQuiz}
-                                disabled={!answered && !userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id)}
-                            >
-                                Finish Quiz
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </Container>
+                                {/* Quiz Header */}
+                                <Card className="border-0 shadow-sm mb-4">
+                                    <Card.Body className="p-4">
+                                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                                            <div>
+                                                <h4 className="mb-1">Quiz Progress</h4>
+                                                <p className="text-muted mb-md-0">
+                                                    <span className="fw-medium">Question {currentQuestionIndex + 1}</span> of {questions.length}
+                                                </p>
+                                            </div>
+                                            <div className="d-flex flex-column flex-md-row align-items-md-center gap-2">
+                                                <Badge bg="success" className="py-2 px-3 d-flex align-items-center">
+                                                    <FiCheckCircle className="me-1" />
+                                                    <span>{userAnswers.length} / {questions.length} Answered</span>
+                                                </Badge>
+                                                <Button 
+                                                    variant="outline-info" 
+                                                    size="sm" 
+                                                    className="d-flex align-items-center justify-content-center"
+                                                    onClick={() => {
+                                                        if (!goToUnansweredQuestion()) {
+                                                            showError("Tất cả câu hỏi đã được trả lời!");
+                                                            
+                                                            if (userAnswers.length >= questions.length) {
+                                                                handleFinishQuiz();
+                                                            }
+                                                        }
+                                                    }}
+                                                >
+                                                    <FiHelpCircle className="me-1" />
+                                                    Unanswered Questions
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        
+                                        <ProgressBar 
+                                            now={((currentQuestionIndex + 1) / questions.length) * 100} 
+                                            variant="primary" 
+                                            className="mb-0"
+                                            style={{ height: "8px", borderRadius: "4px" }}
+                                        />
+                                    </Card.Body>
+                                </Card>
+
+                                {/* Warning Card if question already answered */}
+                                {userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) && disableAnswerChange && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mb-4"
+                                    >
+                                        <div className="alert alert-warning d-flex align-items-center">
+                                            <i className="fas fa-lock me-2"></i>
+                                            <div>
+                                                <span>This question has already been answered and cannot be changed.</span>
+                                                <Button 
+                                                    variant="link" 
+                                                    className="p-0 ms-2 fw-medium" 
+                                                    onClick={goToUnansweredQuestion}
+                                                >
+                                                    Go to unanswered questions
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                                
+                                {/* Question Card */}
+                                <Card className="border-0 shadow-lg mb-4 quiz-question-card">
+                                    <Card.Body className="p-4 p-lg-5">
+                                        {questions.length > 0 && (
+                                            <>
+                                                <div className="d-flex justify-content-between align-items-center mb-4">
+                                                    <Badge bg="primary" className="py-2 px-3 rounded-pill fw-medium">
+                                                        Question {currentQuestionIndex + 1} of {questions.length}
+                                                    </Badge>
+                                                    <Badge 
+                                                        bg={userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) ? 
+                                                            "success" : "warning"} 
+                                                        className="py-2 px-3 rounded-pill fw-medium"
+                                                    >
+                                                        {userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) ? 
+                                                            "Answered" : "Not answered"}
+                                                    </Badge>
+                                                </div>
+                                                <QuestionGame 
+                                                    question={questions[currentQuestionIndex]} 
+                                                    questionNumber={currentQuestionIndex + 1}
+                                                    totalQuestions={questions.length}
+                                                    onAnswer={handleAnswer}
+                                                    defaultAnswer={userAnswers.find(a => a.questionId === questions[currentQuestionIndex]?._id)?.selectedOption}
+                                                    isLocked={userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) && disableAnswerChange}
+                                                />
+                                            </>
+                                        )}
+                                    </Card.Body>
+                                </Card>
+                                
+                                {/* Quiz Navigation Footer */}
+                                <Card className="border-0 shadow-lg" style={{borderRadius: '12px'}}>
+                                    <Card.Body className="p-4">
+                                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                                            <div className="mb-3 mb-md-0">
+                                                <h5 className="mb-2 d-flex align-items-center">
+                                                    <motion.div
+                                                        animate={{ rotate: [0, 15, 0, -15, 0] }}
+                                                        transition={{ duration: 2, repeat: Infinity, repeatType: 'loop' }}
+                                                    >
+                                                        <FiAward className="me-2 text-warning" size={24} />
+                                                    </motion.div>
+                                                    Current Score: <span className="ms-2 text-primary fw-bold">{score}</span>
+                                                </h5>
+                                                <div className="d-flex align-items-center">
+                                                    <div className="flex-grow-1 me-2 position-relative" style={{height: '10px'}}>
+                                                        <div className="position-absolute w-100 bg-light" style={{height: '10px', borderRadius: '5px'}}></div>
+                                                        <motion.div 
+                                                            className="position-absolute bg-success" 
+                                                            style={{
+                                                                height: '10px', 
+                                                                borderRadius: '5px',
+                                                                width: `${Math.round((score / (questions.length * 100)) * 100)}%`
+                                                            }}
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${Math.round((score / (questions.length * 100)) * 100)}%` }}
+                                                            transition={{ duration: 0.8 }}
+                                                        ></motion.div>
+                                                    </div>
+                                                    <span className="text-muted fw-medium">
+                                                        {Math.round((score / (questions.length * 100)) * 100)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                {currentQuestionIndex < questions.length - 1 ? (
+                                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                                        <Button 
+                                                            variant="primary" 
+                                                            size="lg" 
+                                                            onClick={handleNextQuestion}
+                                                            disabled={!answered && !userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id)}
+                                                            className="px-4 d-flex align-items-center shadow"
+                                                            style={{borderRadius: '10px'}}
+                                                        >
+                                                            Next Question
+                                                            <motion.div
+                                                                animate={{ x: [0, 5, 0] }}
+                                                                transition={{ duration: 1.5, repeat: Infinity }}
+                                                            >
+                                                                <FiChevronRight className="ms-2" size={22} />
+                                                            </motion.div>
+                                                        </Button>
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                                        <Button 
+                                                            variant="success" 
+                                                            size="lg" 
+                                                            onClick={handleFinishQuiz}
+                                                            disabled={!answered && !userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id)}
+                                                            className="px-4 d-flex align-items-center shadow"
+                                                            style={{borderRadius: '10px'}}
+                                                        >
+                                                            Finish Quiz
+                                                            <FiFlag className="ms-2" size={22} />
+                                                        </Button>
+                                                    </motion.div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Card.Body>
+                                </Card>
+                            </motion.div>
+                        </Col>
+                    </Row>
+                </Container>
+            </div>
         </>
     );
 }
 
-export default PlayPage
+export default PlayPage;

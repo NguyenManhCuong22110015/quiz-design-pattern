@@ -10,7 +10,7 @@ const RoomCard = ({ room, onJoin }) => {
         <div className="d-flex justify-content-between align-items-start">
           <div>
             <div className="d-flex align-items-center gap-2">
-            <h5 className="card-title mb-0" title={name}>
+            <h5 className="card-title mb-0" title={name} style={{color: 'white'}} >
               {name.length > 20 ? `${name.substring(0, 20)}...` : name}
             </h5>
               {password ? <FaLock className="text-warning" /> : <FaLockOpen className="text-success" />}

@@ -149,7 +149,7 @@ const ListQuizzByCate = ({category}) => {
             <Button 
               onClick={goToNextPage}
               style={{ ...navButtonStyle, right: '0' }}
-              className="next-button"
+              className=""
               aria-label="Next page"
             >
               <FaChevronRight />

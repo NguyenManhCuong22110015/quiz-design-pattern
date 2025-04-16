@@ -15,6 +15,9 @@ router.get('/getByUserId', async (req, res) => {
     const { userId } = req.query;
     
     const quizze = await Quizze.find({ createdBy: userId }); 
+    if (!quizze) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
     res.json(quizze);
   } catch (error) {
     res.status(500).json({ message: error.message });

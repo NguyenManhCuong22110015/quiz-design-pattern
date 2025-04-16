@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createRoom } from '../../services/websocket';
 import { createRoom as creRoom } from '../../api/roomApi';
 import Footer from '../../components/common/Footer';
+import NavBar from '../../layout/NavBar';
 const CreateRoomPage = () => {
     const [roomName, setRoomName] = useState('');
     const [password, setPassword] = useState('');
@@ -38,6 +39,7 @@ const CreateRoomPage = () => {
 
     return (
         <div className="container mt-5">
+             <NavBar/>
             <div className="card p-4 mx-auto" style={{ maxWidth: '500px' }}>
                 <h2 className="text-center mb-4">Create New Room</h2>
                 {error && (

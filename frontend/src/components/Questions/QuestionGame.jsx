@@ -5,13 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/QuestionGame.css";
 import CreateLoading from "../common/CreateLoading";
 import DOMPurify from 'dompurify'; // For sanitizing HTML content
+import { FiCheck, FiX } from 'react-icons/fi';
 
 const QuestionGame = ({ 
   question, 
   questionNumber, 
   totalQuestions, 
   onAnswer, 
-  defaultAnswer = null 
+  defaultAnswer = null,
+  isLocked
 }) => {
   // Handle if question is an array with one item
   const questionData = Array.isArray(question) ? question[0] : question;
@@ -189,42 +191,48 @@ const QuestionGame = ({
     onAnswer(textAnswer, isCorrect, earnedPoints);
   };
 
-  // Animation variants for framer-motion
-  const questionVariants = {
-    hidden: { opacity: 0, y: -30 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.7, ease: "easeOut" }
+  // Animation variants for framer-motion - cải thiện để mượt và chuyên nghiệp hơn
+const questionVariants = {
+  hidden: { opacity: 0, y: -30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      duration: 0.7, 
+      ease: [0.25, 1, 0.5, 1],  // Smooth easing
+      when: "beforeChildren" 
     }
-  };
-  
-  const answerVariants = {
-    hidden: { opacity: 0, x: -40 },
-    visible: (custom) => ({ 
-      opacity: 1, 
-      x: 0,
-      transition: { 
-        duration: 0.5, 
-        delay: 0.7 + custom * 0.2,
-        ease: "easeOut" 
-      }
-    })
-  };
-  
-  const mediaVariants = {
-    hidden: { opacity: 0, scale: 0.85 },
-    visible: { 
-      opacity: 1, 
-      scale: 1,
-      transition: { 
-        duration: 0.8, 
-        delay: 1.8,
-        ease: [0.34, 1.56, 0.64, 1] // Spring-like effect
-      }
+  }
+};
+
+const answerVariants = {
+  hidden: { opacity: 0, x: -40, filter: "blur(4px)" },
+  visible: (custom) => ({ 
+    opacity: 1, 
+    x: 0,
+    filter: "blur(0px)",
+    transition: { 
+      duration: 0.6, 
+      delay: 0.4 + custom * 0.15,  // Shorter delay between answers
+      ease: [0.25, 1, 0.5, 1] 
     }
-  };
-  
+  })
+};
+
+const mediaVariants = {
+  hidden: { opacity: 0, scale: 0.9, y: 20 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    y: 0, 
+    transition: { 
+      duration: 0.8, 
+      delay: 0.5,  // Appear earlier
+      ease: [0.34, 1.56, 0.64, 1]  // Spring-like effect
+    }
+  }
+};
+
   const feedbackVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
@@ -261,23 +269,45 @@ const QuestionGame = ({
     switch (questionData.mediaType) {
       case 'image':
         return (
-          <Image 
-            src={questionData.media} 
-            fluid 
-            rounded
-            className="shadow" 
-            style={{ maxWidth: "100%", maxHeight: "400px", objectFit: "contain" }}
-            alt="Question illustration"
-          />
+          <div className="image-container">
+            <Image 
+              src={questionData.media} 
+              fluid 
+              rounded
+              className="question-image shadow-lg" 
+              style={{ 
+                maxWidth: "100%", 
+                maxHeight: "350px", 
+                objectFit: "contain",
+                borderRadius: "12px"
+              }}
+              alt="Question illustration"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+                e.target.className = "error-image"; 
+              }}
+            />
+          </div>
         );
       case 'audio':
         return (
-          <div className="audio-player-container p-3 rounded shadow-sm" 
-               style={{ background: "#f8f9fa", border: "1px solid #dee2e6", width: "100%" }}>
-            <h6 className="text-center mb-3"><i className="bi bi-music-note-beamed me-2"></i>Audio Question</h6>
+          <div className="audio-player-container p-4 rounded-lg shadow" 
+               style={{ 
+                 background: "linear-gradient(145deg, #f8f9fa, #e9ecef)",
+                 border: "1px solid #dee2e6", 
+                 width: "100%",
+                 borderRadius: "15px"
+               }}>
+            <div className="d-flex align-items-center justify-content-center mb-3">
+              <div className="audio-icon-pulse me-2">
+                <i className="bi bi-music-note-beamed fs-4 text-primary"></i>
+              </div>
+              <h6 className="mb-0 fw-bold text-primary">Audio Question</h6>
+            </div>
             <audio 
               controls 
-              className="w-100" 
+              className="w-100 custom-audio-player" 
               style={{ borderRadius: "8px" }}
             >
               <source src={questionData.media} />
@@ -287,11 +317,13 @@ const QuestionGame = ({
         );
       case 'video':
         return (
-          <div className="video-container shadow-sm rounded overflow-hidden">
+          <div className="video-container shadow-lg rounded-lg overflow-hidden p-1"
+               style={{ background: "#000", borderRadius: "15px" }}>
             <video 
               controls 
               className="w-100" 
-              style={{ borderRadius: "8px", maxHeight: "400px" }}
+              style={{ borderRadius: "12px", maxHeight: "350px" }}
+              poster="https://via.placeholder.com/400x300?text=Video+Loading"
             >
               <source src={questionData.media} />
               Your browser does not support the video element.
@@ -305,19 +337,15 @@ const QuestionGame = ({
 
   // Reordering the columns for mobile
   const mediaSection = (
-    <Col md={6} className="text-center mb-4">
-      <AnimatePresence>
-        {mediaVisible && questionData.media && (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={mediaVariants}
-          >
-            {renderMedia()}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Col>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={mediaVariants}
+      className="media-wrapper p-2"
+      style={{ width: "100%" }}
+    >
+      {mediaVisible && questionData.media && renderMedia()}
+    </motion.div>
   );
 
   // Rich Text rendering with sanitization
@@ -327,41 +355,54 @@ const QuestionGame = ({
   };
 
   return (
-    <>
-      <Container className="d-flex vh-100 align-items-center justify-content-center">
-        <Row className="w-100 align-items-center">
-          {/* Media Section - shows on top for mobile */}
+    <div className="question-game-container py-4">
+      <Container>
+        <Row className="align-items-start justify-content-between">
+          {/* Media Section - hiển thị trên cùng trên mobile */}
           {isMobile && questionData.media && mediaSection}
 
           {/* Question and Answers Section */}
-          <Col md={6} className="text-center text-md-start">
+          <Col lg={questionData.media ? 7 : 12} className="question-content mb-4">
             <AnimatePresence>
               {questionVisible && (
                 <motion.div 
-                  className="mb-4"
+                  className="question-text mb-4"
                   initial="hidden"
                   animate="visible"
                   variants={questionVariants}
                 >
-                  {questionData.text.includes('<') && questionData.text.includes('>') 
-                    ? renderRichText(questionData.text)
-                    : <h1>{questionData.text}</h1>
-                  }
+                  <h4 className="fw-bold mb-3" style={{ fontSize: "1.5rem", lineHeight: "1.4" }}>
+                    {questionData.text.includes('<') && questionData.text.includes('>') 
+                      ? renderRichText(questionData.text)
+                      : questionData.text
+                    }
+                  </h4>
                   
                   {/* Show question description if available */}
-                  {questionData.description && (
-                    <div className="text-muted mt-2">
-                      {questionData.description.includes('<') && questionData.description.includes('>')
-                        ? renderRichText(questionData.description)
-                        : <p>{questionData.description}</p>
-                      }
-                    </div>
-                  )}
+                  {answered && questionData.description && (
+                      <motion.div 
+                        className="question-description text-muted mt-3 p-3"
+                        initial={{ opacity: 0, y: 10, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: 'auto' }}
+                        transition={{ duration: 0.4, delay: 0.3 }}
+                        style={{
+                          background: "rgba(0, 0, 0, 0.03)",
+                          borderRadius: "10px",
+                          borderLeft: "3px solid #0d6efd"
+                        }}
+                      >
+                        <h6 className="mb-2 fw-bold text-primary">Explanation:</h6>
+                        {questionData.description.includes('<') && questionData.description.includes('>')
+                          ? renderRichText(questionData.description)
+                          : <p className="mb-0">{questionData.description}</p>
+                        }
+                      </motion.div>
+                    )}
                 </motion.div>
               )}
             </AnimatePresence>
             
-            {/* Multiple Choice Questions */}
+            {/* Multiple Choice Questions - Nâng cấp giao diện */}
             {questionData.type !== 'text' && questionData.options && questionData.options.map((option, index) => (
               <AnimatePresence key={index}>
                 {answersVisible[index] && (
@@ -371,6 +412,8 @@ const QuestionGame = ({
                     custom={index}
                     variants={answerVariants}
                     className="mb-3"
+                    whileHover={!answered ? { scale: 1.02, x: 5 } : {}}
+                    transition={{ type: "spring", stiffness: 400 }}
                   >
                     <Button 
                       variant={!answered 
@@ -379,63 +422,69 @@ const QuestionGame = ({
                           ? (option.isCorrect ? "success" : "danger") 
                           : option.isCorrect && selectedAnswer !== null 
                             ? "success" : "outline-secondary")}
-                      className="w-100 py-3 position-relative answer-button"
-                      onClick={() => handleAnswerClick(index)}
+                      className={`w-100 py-3 position-relative answer-button ${!answered ? 'answer-button-hover' : ''}`}
+                      onClick={() => !answered && handleAnswerClick(index)}
                       disabled={answered}
                       style={{
                         boxShadow: selectedAnswer === index 
-                          ? (option.isCorrect ? "0 0 0 3px rgba(40, 167, 69, 0.5)" : "0 0 0 3px rgba(220, 53, 69, 0.5)") 
-                          : option.isCorrect && answered ? "0 0 0 3px rgba(40, 167, 69, 0.5)" : "0 5px 15px rgba(0,0,0,0.08)",
+                          ? (option.isCorrect ? "0 0 15px rgba(40, 167, 69, 0.4)" : "0 0 15px rgba(220, 53, 69, 0.4)") 
+                          : option.isCorrect && answered ? "0 0 15px rgba(40, 167, 69, 0.4)" : "0 4px 12px rgba(0,0,0,0.08)",
                         opacity: answered && selectedAnswer !== index && !option.isCorrect ? 0.7 : 1,
                         borderWidth: "2px",
                         borderRadius: "12px",
                         transition: "all 0.3s ease",
                         textAlign: "left",
-                        paddingLeft: "60px",
+                        paddingLeft: "65px",
                         fontWeight: "500",
                         fontSize: "1.1rem",
                         transform: answered && (selectedAnswer === index || option.isCorrect) 
                           ? "translateY(-3px)" 
                           : "translateY(0)",
-                        marginBottom: "15px"
+                        marginBottom: "15px",
+                        background: !answered ? "white" : undefined,
+                        minHeight: "60px",
+                        color: "#0d6efd",
                       }}
                     >
-                      {/* Answer Letter Label */}
+                      {/* Answer Letter Label - Nâng cấp thiết kế */}
                       <div 
                         className="position-absolute d-flex align-items-center justify-content-center"
                         style={{
                           left: "10px",
                           top: "50%",
                           transform: "translateY(-50%)",
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "8px",
+                          width: "45px",
+                          height: "45px",
+                          borderRadius: "10px",
                           background: !answered 
-                            ? "#e9ecef" 
+                            ? "rgba(13, 110, 253, 0.1)" 
                             : (selectedAnswer === index 
                               ? (option.isCorrect ? "#28a745" : "#dc3545") 
-                              : option.isCorrect ? "#28a745" : "#e9ecef"),
-                          color: !answered || (!option.isCorrect && selectedAnswer !== index) 
-                            ? "#495057" 
-                            : "#ffffff",
+                              : option.isCorrect ? "#28a745" : "rgba(13, 110, 253, 0.1)"),
+                          color: !answered 
+                            ? "#0d6efd" 
+                            : (option.isCorrect || selectedAnswer === index) ? "#ffffff" : "#0d6efd",
                           fontWeight: "bold",
                           fontSize: "1.2rem",
-                          transition: "all 0.3s ease"
+                          transition: "all 0.3s ease",
+                          boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
                         }}
                       >
                         {String.fromCharCode(65 + index)} {/* A, B, C, D, etc. */}
                       </div>
 
                       {/* Option text with rich text support */}
-                      {option.option.includes('<') && option.option.includes('>')
-                        ? <span>{renderRichText(option.option)}</span>
-                        : <span>{option.option}</span>
-                      }
+                      <div className="option-text" style={{ wordBreak: "break-word" }}>
+                        {option.option.includes('<') && option.option.includes('>')
+                          ? renderRichText(option.option)
+                          : option.option
+                        }
+                      </div>
                       
-                      {/* Correct/Incorrect Icons */}
+                      {/* Correct/Incorrect Icons - Cải thiện animation */}
                       {answered && option.isCorrect && (
                         <motion.div 
-                          className="position-absolute d-flex align-items-center justify-content-center"
+                          className="correct-icon position-absolute d-flex align-items-center justify-content-center"
                           initial={{ scale: 0, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           transition={{ type: "spring", stiffness: 500, delay: 0.2 }}
@@ -443,20 +492,21 @@ const QuestionGame = ({
                             right: "15px",
                             top: "50%",
                             transform: "translateY(-50%)",
-                            width: "28px",
-                            height: "28px",
+                            width: "30px",
+                            height: "30px",
                             borderRadius: "50%",
                             background: "#28a745",
-                            color: "#fff"
+                            color: "#fff",
+                            boxShadow: "0 3px 8px rgba(40, 167, 69, 0.4)"
                           }}
                         >
-                          ✓
+                          <FiCheck size={20} />
                         </motion.div>
                       )}
                       
                       {answered && selectedAnswer === index && !option.isCorrect && (
                         <motion.div 
-                          className="position-absolute d-flex align-items-center justify-content-center"
+                          className="incorrect-icon position-absolute d-flex align-items-center justify-content-center"
                           initial={{ scale: 0, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           transition={{ type: "spring", stiffness: 500, delay: 0.2 }}
@@ -464,14 +514,15 @@ const QuestionGame = ({
                             right: "15px",
                             top: "50%",
                             transform: "translateY(-50%)",
-                            width: "28px",
-                            height: "28px",
+                            width: "30px",
+                            height: "30px",
                             borderRadius: "50%",
                             background: "#dc3545",
-                            color: "#fff"
+                            color: "#fff",
+                            boxShadow: "0 3px 8px rgba(220, 53, 69, 0.4)"
                           }}
                         >
-                          ✗
+                          <FiX size={20} />
                         </motion.div>
                       )}
                     </Button>
@@ -479,6 +530,121 @@ const QuestionGame = ({
                 )}
               </AnimatePresence>
             ))}
+            
+            {/* Text Input Question - Cải thiện giao diện */}
+            {questionData.type === 'text' && (
+              <AnimatePresence>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  variants={textInputVariants}
+                  className="mb-4"
+                >
+                  <Form onSubmit={handleTextSubmit}>
+                    <Form.Group className="mb-3">
+                      <div className="position-relative">
+                        <Form.Control
+                          type="text"
+                          placeholder="Type your answer here..."
+                          value={textAnswer}
+                          onChange={(e) => setTextAnswer(e.target.value)}
+                          disabled={answered}
+                          ref={textInputRef}
+                          className="py-3 px-4"
+                          style={{
+                            borderRadius: "12px",
+                            boxShadow: "0 5px 20px rgba(0,0,0,0.05)",
+                            fontSize: "1.1rem",
+                            border: answered 
+                              ? (feedback.correct ? "2px solid #28a745" : "2px solid #dc3545") 
+                              : "2px solid #dee2e6",
+                            transition: "all 0.3s ease",
+                            paddingRight: textAnswer ? "50px" : "12px",
+                            height: "60px"
+                          }}
+                        />
+                        {textAnswer && !answered && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="position-absolute"
+                            style={{
+                              right: "15px",
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              cursor: "pointer"
+                            }}
+                            onClick={() => setTextAnswer("")}
+                          >
+                            <FiX color="#6c757d" size={20} />
+                          </motion.div>
+                        )}
+                      </div>
+                    </Form.Group>
+                    <motion.div
+                      whileHover={!answered ? { scale: 1.02 } : {}}
+                      whileTap={!answered ? { scale: 0.98 } : {}}
+                    >
+                      <Button 
+                        type="submit" 
+                        variant={answered ? (feedback.correct ? "success" : "danger") : "primary"}
+                        className="w-100 py-3 d-flex align-items-center justify-content-center"
+                        disabled={answered || !textAnswer.trim()}
+                        style={{
+                          borderRadius: "12px",
+                          fontWeight: "500",
+                          boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
+                          transition: "all 0.3s ease",
+                          height: "60px"
+                        }}
+                      >
+                        {answered ? (
+                          <>
+                            {feedback.correct ? (
+                              <>
+                                <FiCheck className="me-2" size={20} /> Correct Answer!
+                              </>
+                            ) : (
+                              <>
+                                <FiX className="me-2" size={20} /> Incorrect Answer
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          "Submit Answer"
+                        )}
+                      </Button>
+                    </motion.div>
+                    
+                    {/* Show correct answers if wrong */}
+                    {answered && !feedback.correct && questionData.options && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.4 }}
+                        className="mt-3 p-3 rounded-lg"
+                        style={{ 
+                          background: "rgba(40, 167, 69, 0.1)",
+                          border: "1px solid rgba(40, 167, 69, 0.2)",
+                          borderRadius: "12px",
+                          boxShadow: "0 3px 10px rgba(40, 167, 69, 0.1)"
+                        }}
+                      >
+                        <p className="mb-1 fw-bold">Correct answer(s):</p>
+                        <ul className="mb-0 ps-3">
+                          {questionData.options
+                            .filter(opt => opt.isCorrect)
+                            .map((opt, i) => (
+                              <li key={i} className="mb-1">{opt.option}</li>
+                            ))
+                          }
+                        </ul>
+                      </motion.div>
+                    )}
+                  </Form>
+                </motion.div>
+              </AnimatePresence>
+            )}
             
             {/* Text Input Question */}
             {questionData.type === 'text' || questionData.type === 'number'&& (
@@ -553,19 +719,42 @@ const QuestionGame = ({
               </AnimatePresence>
             )}
             
-            {/* Feedback message */}
+            {/* Feedback message - cải thiện thiết kế và animation */}
             <AnimatePresence>
               {feedback.visible && questionData.type !== 'text' && (
                 <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={feedbackVariants}
+                  initial={{ opacity: 0, y: 20, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: 20, height: 0 }}
+                  transition={{ duration: 0.4 }}
                   className="mt-4"
                 >
-                  <Alert variant={feedback.correct ? "success" : "danger"}>
-                    {feedback.correct 
-                      ? "Correct! Well done!" 
-                      : "Incorrect! The right answer has been highlighted."}
+                  <Alert 
+                    variant={feedback.correct ? "success" : "danger"}
+                    className="d-flex align-items-center"
+                    style={{
+                      borderRadius: "12px",
+                      boxShadow: feedback.correct 
+                        ? "0 4px 15px rgba(40, 167, 69, 0.15)" 
+                        : "0 4px 15px rgba(220, 53, 69, 0.15)"
+                    }}
+                  >
+                    <div className={`alert-icon me-3 ${feedback.correct ? 'text-success' : 'text-danger'}`}>
+                      {feedback.correct 
+                        ? <FiCheck size={24} /> 
+                        : <FiX size={24} />
+                      }
+                    </div>
+                    <div>
+                      <h6 className="mb-1 fw-bold">
+                        {feedback.correct ? "Correct!" : "Incorrect!"}
+                      </h6>
+                      <p className="mb-0 small">
+                        {feedback.correct 
+                          ? "Great job! You selected the right answer." 
+                          : "The correct answer has been highlighted in green."}
+                      </p>
+                    </div>
                   </Alert>
                 </motion.div>
               )}
@@ -593,10 +782,14 @@ const QuestionGame = ({
           </Col>
 
           {/* Media Section - Desktop view (right side) */}
-          {!isMobile && questionData.media && mediaSection}
+          {!isMobile && questionData.media && (
+            <Col lg={5} className="media-content d-flex align-items-start justify-content-center">
+              {mediaSection}
+            </Col>
+          )}
         </Row>
       </Container>
-    </>
+    </div>
   );
 };
 

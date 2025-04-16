@@ -1,21 +1,31 @@
 import { useEffect, useState } from 'react';
 import NavBarLeft from '../../components/Admin/NavBarLeft';
-import '../../styles/Assessments.css';
 import NavBarTop from '../../components/Admin/NavBarTop';
-
 import { getAll, createCategory, updateCategory, deleteCategory } from '../../api/questionApi';
 import { Link } from 'react-router-dom';
 import { showSuccess, showError } from "../../components/common/Notification";
-import { FcFolder } from "react-icons/fc";
-import { Modal, Button, Form } from 'react-bootstrap';
+import { Modal, Button, Form, Card, Badge, InputGroup, FormControl, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import Swal from 'sweetalert2';
+import { motion } from 'framer-motion';
+import { 
+  FcFolder, 
+  FcOpenedFolder, 
+  FcQuestions, 
+  FcSearch, 
+  FcFullTrash, 
+  FcSettings 
+} from "react-icons/fc";
+import { FiEdit3, FiTrash2, FiEye, FiPlusCircle, FiFilter, FiCalendar, FiRefreshCw } from "react-icons/fi";
+import '../../styles/Assessments.css';
 
 const CategoryPage = () => {
   const [categories, setCategories] = useState([]);
-  const userId = JSON.parse(localStorage.getItem('user')).id || 1
+  const [filteredCategories, setFilteredCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: ''
@@ -23,46 +33,35 @@ const CategoryPage = () => {
 
   // Fetch categories on component mount
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await getAll();
-        setCategories(res);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        showError('Failed to load categories');
-      }
-    };
     fetchCategories();
-  }, [userId]);
-
-  // Sidebar toggle effect
-  useEffect(() => {
-    const sidebar = document.querySelector(".sidebar");
-    const closeBtn = document.querySelector("#btn");
-    
-    const menuBtnChange = () => {
-      if (sidebar?.classList.contains("open")) {
-        closeBtn?.classList.replace("bx-menu", "bx-menu-alt-right");
-      } else {
-        closeBtn?.classList.replace("bx-menu-alt-right", "bx-menu");
-      }
-    };
-
-    const handleClick = () => {
-      sidebar?.classList.toggle("open");
-      menuBtnChange();
-    };
-
-    if (closeBtn) {
-      closeBtn.addEventListener("click", handleClick);
-    }
-
-    return () => {
-      if (closeBtn) {
-        closeBtn.removeEventListener("click", handleClick);
-      }
-    };
   }, []);
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const res = await getAll();
+      setCategories(res);
+      setFilteredCategories(res);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      showError('Failed to load categories');
+      setLoading(false);
+    }
+  };
+
+  // Search and filter functionality
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = categories.filter(category => 
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredCategories(filtered);
+    } else {
+      setFilteredCategories(categories);
+    }
+  }, [searchTerm, categories]);
 
   // Modal handlers
   const handleOpenAddModal = () => {
@@ -74,7 +73,7 @@ const CategoryPage = () => {
     setSelectedCategory(category);
     setFormData({
       name: category.name,
-      description: category.description
+      description: category.description || ''
     });
     setShowEditModal(true);
   };
@@ -114,13 +113,16 @@ const CategoryPage = () => {
         createdBy: userData.id
       };
       
+      setLoading(true);
       const response = await createCategory(categoryData);
       setCategories([...categories, response]);
       showSuccess('Category created successfully!');
       handleCloseModals();
+      setLoading(false);
     } catch (error) {
       console.error('Error creating category:', error);
       showError('Failed to create category!');
+      setLoading(false);
     }
   };
 
@@ -136,10 +138,9 @@ const CategoryPage = () => {
         showError('Invalid category selected');
         return;
       }
-      console.log(selectedCategory._id)
+      
+      setLoading(true);
       const response = await updateCategory(selectedCategory._id, formData);
-      
-      
       
       setCategories(categories.map(cat => 
         cat._id === selectedCategory._id ? response : cat
@@ -147,31 +148,46 @@ const CategoryPage = () => {
       
       showSuccess('Category updated successfully!');
       handleCloseModals();
+      setLoading(false);
     } catch (error) {
       console.error('Error updating category:', error);
       showError('Failed to update category!');
+      setLoading(false);
     }
   };
 
   // Delete category
-  const handleDeleteCategory = (categoryId) => {
+  const handleDeleteCategory = (categoryId, categoryName) => {
     Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this! All quizzes in this category will be affected.",
+      title: 'Delete Category?',
+      html: `Are you sure you want to delete <strong>${categoryName}</strong>?<br><br>All quizzes in this category will be affected.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      focusCancel: true,
+      backdrop: true,
+      showClass: {
+        popup: 'animate__animated animate__fadeIn animate__faster'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__fadeOut animate__faster'
+      }
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
+          setLoading(true);
           await deleteCategory(categoryId);
           setCategories(categories.filter(cat => cat._id !== categoryId));
           showSuccess('Category deleted successfully!');
+          setLoading(false);
         } catch (error) {
           console.error('Error deleting category:', error);
           showError('Failed to delete category!');
+          setLoading(false);
         }
       }
     });
@@ -207,138 +223,268 @@ const CategoryPage = () => {
     return 'Today';
   };
 
+  // Tooltip rendering function
+  const renderTooltip = (text) => (props) => (
+    <Tooltip id="button-tooltip" {...props}>
+      {text}
+    </Tooltip>
+  );
+
   return (
-    <>
+    <div className="admin-dashboard">
       <div className='sidebar admin-layout'>
         <NavBarLeft />
       </div>
-      <div className='home-section mt-5'>
+      <div className='home-section'>
         <NavBarTop />
-        <div className="container-fluid admin-content">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h3 className="m-0">
-              <FcFolder className="me-2" />
-              Categories
-            </h3>
-            <button className="btn btn-success" onClick={handleOpenAddModal}>
-              <i className="bi bi-folder-plus me-2"></i>
-              Add Category
-            </button> 
-          </div>
-          
-          <div className="table-responsive">
-            <table className="table table-striped table-hover table-bordered shadow-sm">
-              <thead className="table-dark">
-                <tr>
-                  <th scope="col" className="text-center" width="60">#</th>
-                  <th scope="col" width="200">Category Name</th>
-                  <th scope="col">Description</th>
-                  <th scope="col" width="120" className="text-center">Created at</th>
-                  <th scope="col" width="120" className="text-center">Updated</th>
-                  <th scope="col" width="160" className="text-center">Actions</th>
-                  <th scope="col" width="160" className="text-center">Quizzes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.length > 0 ? (
-                  categories.map((category, index) => (
-                    <tr key={category._id}>
-                      <th scope="row" className="text-center align-middle">{index + 1}</th>
-                      <td className="fw-bold align-middle">{category.name}</td>
-                      <td className="align-middle text-muted">
-                        {category.description && category.description.length > 100 
-                          ? `${category.description.substring(0, 100)}...` 
-                          : category.description || 'No description'}
-                      </td>
-                      <td className="text-center align-middle">
-                        <span className="badge bg-light text-dark">
-                          {formatDate(category.createAt || category.createdAt)}
-                        </span>
-                      </td>
-                      <td className="text-center align-middle">
-                        <span className="badge bg-secondary text-white">
-                          {getTimeAgo(category.updatedAt || category.createAt || category.createdAt)}
-                        </span>
-                      </td>
-                      <td className="text-center align-middle">
-                        <div className="btn-group" role="group">
-                          <button 
-                            onClick={() => handleOpenEditModal(category)}
-                            className="btn btn-outline-primary btn-sm me-2"
+        <div className="content-wrapper">
+          <Card className="admin-card shadow-sm mb-4">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex align-items-center">
+                  <FcOpenedFolder size={36} className="me-3" />
+                  <div>
+                    <h4 className="mb-0 fw-bold">Categories</h4>
+                    <p className="text-muted mb-0 small">Manage quiz categories and their related content</p>
+                  </div>
+                </div>
+                <div className="d-flex gap-2">
+                  <Button 
+                    variant="outline-secondary" 
+                    className="d-flex align-items-center"
+                    onClick={fetchCategories}
+                  >
+                    <FiRefreshCw className="me-2" /> Refresh
+                  </Button>
+                  <Button 
+                    variant="primary" 
+                    className="d-flex align-items-center shadow-sm"
+                    onClick={handleOpenAddModal}
+                  >
+                    <FiPlusCircle className="me-2" /> Add Category
+                  </Button>
+                </div>
+              </div>
+
+              <div className="filter-bar d-flex flex-column flex-md-row align-items-center mb-4 gap-3">
+                <InputGroup className="search-bar flex-md-grow-1">
+                  <InputGroup.Text className="bg-light border-end-0">
+                    <FcSearch size={20} />
+                  </InputGroup.Text>
+                  <FormControl
+                    placeholder="Search categories by name or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="border-start-0 py-2"
+                  />
+                  {searchTerm && (
+                    <Button 
+                      variant="outline-secondary" 
+                      onClick={() => setSearchTerm('')}
+                      className="border-start-0"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </InputGroup>
+                <div className="d-flex align-items-center">
+                  <span className="text-muted small me-2">
+                    {filteredCategories.length} of {categories.length} categories
+                  </span>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p className="mt-3 text-muted">Loading categories...</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover categories-table align-middle">
+                    <thead className="bg-light">
+                      <tr>
+                        <th scope="col" className="ps-4" width="40">#</th>
+                        <th scope="col">
+                          <div className="d-flex align-items-center">
+                            <FcFolder className="me-2" />
+                            Category
+                          </div>
+                        </th>
+                        <th scope="col">Description</th>
+                        <th scope="col" width="130">Created</th>
+                        <th scope="col" width="120">Last Updated</th>
+                        <th scope="col" width="180" className="text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCategories.length > 0 ? (
+                        filteredCategories.map((category, index) => (
+                          <motion.tr 
+                            key={category._id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="category-row"
                           >
-                            <i className="bi bi-pencil-square me-1"></i> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCategory(category._id)}
-                            className="btn btn-outline-danger btn-sm"
-                          >
-                            <i className="bi bi-trash me-1"></i> Delete
-                          </button>
-                        </div>
-                      </td>
-                      <td className="text-center align-middle">
-                        <Link 
-                          to={`/admin/category/${category._id}/quizzes`} 
-                          className="btn btn-outline-primary btn-sm"
-                        >
-                          <i className="bi bi-collection me-1"></i> View Quizzes
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center py-4 text-muted">
-                      <i className="bi bi-folder-x me-2 fs-4"></i>
-                      No categories available. Create one to get started!
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                            <td className="ps-4 fw-medium text-muted">{index + 1}</td>
+                            <td>
+                              <div className="d-flex align-items-center">
+                                <div className="category-icon-wrapper me-3">
+                                  <FcFolder size={24} />
+                                </div>
+                                <div>
+                                  <h6 className="mb-0 fw-bold">{category.name}</h6>
+                                  <div className="d-flex align-items-center mt-1">
+                                    <Link 
+                                      to={`/admin/category/${category._id}/quizzes`}
+                                      className="badge bg-light text-primary d-flex align-items-center gap-1 text-decoration-none"
+                                    >
+                                      <FcQuestions size={14} /> 
+                                      View Quizzes
+                                    </Link>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="text-muted">
+                              {category.description && category.description.length > 100 
+                                ? `${category.description.substring(0, 100)}...` 
+                                : category.description || 'No description provided'}
+                            </td>
+                            <td>
+                              <div className="d-flex align-items-center">
+                                <FiCalendar size={14} className="text-muted me-2" />
+                                <span>{formatDate(category.createAt || category.createdAt)}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <Badge bg="light" text="dark" className="update-badge">
+                                {getTimeAgo(category.updatedAt || category.createAt || category.createdAt)}
+                              </Badge>
+                            </td>
+                            <td>
+                              <div className="d-flex justify-content-center gap-2">
+                                <OverlayTrigger placement="top" overlay={renderTooltip("View Quizzes")}>
+                                  <Link
+                                    to={`/admin/category/${category._id}/quizzes`}
+                                    className="btn btn-sm btn-light action-btn"
+                                  >
+                                    <FiEye className="action-icon" />
+                                  </Link>
+                                </OverlayTrigger>
+                                
+                                <OverlayTrigger placement="top" overlay={renderTooltip("Edit Category")}>
+                                  <Button
+                                    variant="light"
+                                    size="sm"
+                                    className="action-btn"
+                                    onClick={() => handleOpenEditModal(category)}
+                                  >
+                                    <FiEdit3 className="action-icon" />
+                                  </Button>
+                                </OverlayTrigger>
+                                
+                                <OverlayTrigger placement="top" overlay={renderTooltip("Delete Category")}>
+                                  <Button
+                                    variant="light"
+                                    size="sm"
+                                    className="action-btn delete-btn"
+                                    onClick={() => handleDeleteCategory(category._id, category.name)}
+                                  >
+                                    <FiTrash2 className="action-icon" />
+                                  </Button>
+                                </OverlayTrigger>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="6" className="text-center py-5">
+                            <FcFullTrash size={48} className="mb-3 d-block mx-auto" />
+                            <h6>No categories found</h6>
+                            <p className="text-muted mb-0">
+                              {searchTerm ? 
+                                'Try changing your search criteria' : 
+                                'Create a new category to get started'}
+                            </p>
+                            {searchTerm && (
+                              <Button 
+                                variant="link" 
+                                className="mt-2"
+                                onClick={() => setSearchTerm('')}
+                              >
+                                Clear search
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
         </div>
       </div>
 
       {/* Add Category Modal */}
       <Modal show={showAddModal} onHide={handleCloseModals} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <i className="bi bi-folder-plus me-2"></i>
-            Add New Category
+        <Modal.Header closeButton className="border-bottom-0 pb-0">
+          <Modal.Title as="h5" className="text-primary d-flex align-items-center">
+            <FiPlusCircle className="me-2" />
+            Create New Category
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="pt-3">
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Category Name <span className="text-danger">*</span></Form.Label>
+              <Form.Label className="fw-medium">Category Name <span className="text-danger">*</span></Form.Label>
               <Form.Control
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Enter category name"
+                placeholder="Enter a descriptive name"
                 required
+                autoFocus
+                className="form-control-lg"
               />
+              <Form.Text className="text-muted">
+                Choose a clear and specific name for easy identification
+              </Form.Text>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
+              <Form.Label className="fw-medium">Description</Form.Label>
               <Form.Control
                 as="textarea"
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                placeholder="Enter category description"
-                rows={3}
+                placeholder="Describe the purpose or content of this category"
+                rows={4}
+                className="form-control-lg"
               />
+              <Form.Text className="text-muted">
+                A good description helps users understand what types of quizzes belong here
+              </Form.Text>
             </Form.Group>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModals}>
+        <Modal.Footer className="border-top-0 pt-0">
+          <Button variant="light" onClick={handleCloseModals}>
             Cancel
           </Button>
-          <Button variant="success" onClick={handleSaveCategory}>
+          <Button 
+            variant="primary" 
+            onClick={handleSaveCategory}
+            className="px-4"
+            disabled={!formData.name.trim()}
+          >
             Create Category
           </Button>
         </Modal.Footer>
@@ -346,16 +492,16 @@ const CategoryPage = () => {
 
       {/* Edit Category Modal */}
       <Modal show={showEditModal} onHide={handleCloseModals} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <i className="bi bi-pencil-square me-2"></i>
+        <Modal.Header closeButton className="border-bottom-0 pb-0">
+          <Modal.Title as="h5" className="text-primary d-flex align-items-center">
+            <FiEdit3 className="me-2" />
             Edit Category
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="pt-3">
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Category Name <span className="text-danger">*</span></Form.Label>
+              <Form.Label className="fw-medium">Category Name <span className="text-danger">*</span></Form.Label>
               <Form.Control
                 type="text"
                 name="name"
@@ -363,31 +509,39 @@ const CategoryPage = () => {
                 onChange={handleInputChange}
                 placeholder="Enter category name"
                 required
+                autoFocus
+                className="form-control-lg"
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
+              <Form.Label className="fw-medium">Description</Form.Label>
               <Form.Control
                 as="textarea"
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
                 placeholder="Enter category description"
-                rows={3}
+                rows={4}
+                className="form-control-lg"
               />
             </Form.Group>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModals}>
+        <Modal.Footer className="border-top-0 pt-0">
+          <Button variant="light" onClick={handleCloseModals}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleUpdateCategory}>
-            Update Category
+          <Button 
+            variant="primary" 
+            onClick={handleUpdateCategory}
+            className="px-4"
+            disabled={!formData.name.trim()}
+          >
+            Save Changes
           </Button>
         </Modal.Footer>
       </Modal>
-    </>
+    </div>
   );
 };
 

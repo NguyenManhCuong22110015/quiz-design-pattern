@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from "react";
-import ws, { joinGame,joinRoom, sendAnswer, sendMessage, startGame,endGame,initializeWebSocket } from "../../services/websocket.js";
+import React, { useState, useEffect, useRef } from "react";
+import { Container, Row, Col, Card, Button, InputGroup, Form, Badge, Dropdown } from 'react-bootstrap';
+import ws, { joinGame, joinRoom, sendAnswer, sendMessage, startGame, endGame, initializeWebSocket } from "../../services/websocket.js";
 import ChoiceName from "../../components/RoomQuestion/ChoiceName";
-import { useParams,useNavigate } from "react-router-dom";  // Import from react-router-dom
+import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../../layout/NavBar.jsx";
-import { MdOutlineGroupAdd } from "react-icons/md";
-import { FaCircleQuestion } from "react-icons/fa6";
+import { MdOutlineGroupAdd, MdSmartDisplay, MdSend, MdMoreVert } from "react-icons/md";
+import { FaCircleQuestion, FaUsersGear, FaRegCopy, FaPlay } from "react-icons/fa6";
+import { TbArrowsExchange } from "react-icons/tb";
+import { IoMdSettings } from "react-icons/io";
 import AddQuiz from "../../components/RoomQuestion/AddQuiz.jsx";
 import ViewMember from "../../components/RoomQuestion/ViewMember.jsx";
-import { TbArrowsExchange } from "react-icons/tb";
-import { FaUsersGear } from "react-icons/fa6";
 import { getRoomById, checkAccessRoom } from "../../api/roomApi.js";
 import ChangeRoomName from "../../components/RoomQuestion/ChangeRoomName.jsx";
 import InviteUser from "../../components/RoomQuestion/InviteUser.jsx";
-import { MdSmartDisplay } from "react-icons/md";
 import { showSuccess, showError } from "../../components/common/Notification.js";
 import PlayGameModal from "../../components/RoomQuestion/PlayGameModal.jsx";
 import CreateLoading from "../../components/common/CreateLoading.jsx";
 import Footer from "../../components/common/Footer.jsx";
+import { motion } from "framer-motion";
+
 const ChatPage = () => {
     const { roomId } = useParams();
     const [username, setUsername] = useState("");
@@ -32,7 +34,7 @@ const ChatPage = () => {
     const [showModelAddQuiz, setShowModelAddQuiz] = useState(false);
     const [showModelMembers, setShowModelMembers] = useState(false);
     const [members, setMembers] = useState([]);
-    const [room,setRoom] = useState(null);
+    const [room, setRoom] = useState(null);
     const [changeRoom, setChangeRoom] = useState(false);
     const [showInviteUser, setShowInviteUser] = useState(false);
     const apiUrl = import.meta.env.VITE_ROOM_URL;
@@ -45,13 +47,24 @@ const ChatPage = () => {
     const [finalResults, setFinalResults] = useState(null);
     const [currentQuestionNumber, setCurrentQuestionNumber] = useState(1);
     const [totalQuestions, setTotalQuestions] = useState(0);
+    
+    // Refs for auto-scrolling
+    const messagesEndRef = useRef(null);
+    const chatContainerRef = useRef(null);
 
     const handleRestartGame = () => {
         // Send restart game message to websocket
         sendMessage(roomId, "/restart", username, userAvatar);
     };
+
     useEffect(() => {
-        
+        // Auto-scroll to bottom when new messages arrive
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [messages]);
+
+    useEffect(() => {
         const verifyRoomAccess = async () => {
             try {
                 // Check if user has room access in session storage
@@ -108,7 +121,6 @@ const ChatPage = () => {
         }
     }, [roomId]);
    
-
     useEffect(() => {
         const handleWebSocketMessage = (event) => {
             const data = JSON.parse(event.data);
@@ -118,7 +130,8 @@ const ChatPage = () => {
                     setMessages(prev => [...prev, {
                         username: data.username, 
                         message: data.message,
-                        userAvatar: data.userAvatar
+                        userAvatar: data.userAvatar,
+                        timestamp: new Date().toISOString()
                     }]);
                     break;
                 case "playerList":
@@ -133,11 +146,10 @@ const ChatPage = () => {
                     showSuccess("Game started");
                     break;
                 case 'end_game':
-                        setGameEnded(true);
-                        setFinalResults(data.results);
-                        localStorage.removeItem(`gameInProgress_${roomId}`);
-                        //showSuccess("Game ended!");
-                        break;
+                    setGameEnded(true);
+                    setFinalResults(data.results);
+                    localStorage.removeItem(`gameInProgress_${roomId}`);
+                    break;
                 case 'question':
                     setCurrentQuestion(data.question);
                     console.log("📩 Question received:", data.question);
@@ -147,18 +159,15 @@ const ChatPage = () => {
                     setTotalQuestions(data.totalQuestions);
                     break;
                     
-                    case 'all_answers':
-                        setShowResults(true);
-                        setAllAnswers(data.answers);
-                       
-                        if (currentQuestionNumber === totalQuestions) {
-                            setGameEnded(true);
-                        }
-                        break;
-                    
-                
+                case 'all_answers':
+                    setShowResults(true);
+                    setAllAnswers(data.answers);
+                   
+                    if (currentQuestionNumber === totalQuestions) {
+                        setGameEnded(true);
+                    }
+                    break;
             }
-            
         };
 
         ws.onmessage = handleWebSocketMessage;
@@ -174,9 +183,7 @@ const ChatPage = () => {
         const fetchRoom = async () => {
             try {
                 const response = await getRoomById(roomId);
-                
                 setRoom(response);
-                
                 
             } catch (error) {
                 console.error('Fetch room error:', error);
@@ -192,16 +199,24 @@ const ChatPage = () => {
             setShowModal(true);
         }
     }, []);
+
     if (isVerifying) {
-        return <div><CreateLoading/></div>;
+        return (
+            <div className="loading-container d-flex flex-column align-items-center justify-content-center vh-100">
+                <CreateLoading />
+                <p className="mt-3 text-muted">Verifying room access...</p>
+            </div>
+        );
     }
+
     const handleSendMessage = (e) => {
         e.preventDefault();
         if (inputMessage.trim()) {
-            sendMessage(roomId,inputMessage,username,userAvatar);
+            sendMessage(roomId, inputMessage, username, userAvatar);
             setInputMessage("");
         }
     };
+
     const handleSetUsername = async (userData) => {
         const { name, avatar } = userData;  
         setUsername(name);
@@ -222,7 +237,6 @@ const ChatPage = () => {
             showError('Failed to join room. Please try again.');
         }
     };
-
     const handleShowModal = () => {
         setShowModelAddQuiz(true);
     }
@@ -240,148 +254,345 @@ const ChatPage = () => {
         startGame(roomId);
     }
 
+    const handleCopyRoomLink = () => {
+        const roomLink = `${window.location.origin}/room/${roomId}`;
+        navigator.clipboard.writeText(roomLink)
+            .then(() => showSuccess("Room link copied to clipboard"))
+            .catch(() => showError("Failed to copy room link"));
+    };
+
+    const formatTime = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     return (
-        <div className=" mt-5">
+        <div className="chat-page-container min-vh-100 d-flex flex-column" style={{ backgroundColor: "#f5f7fa" }}>
             <NavBar/>
-           <div className="d-flex justify-content-between align-items-center container">
-           {room &&  <h5 className="card-title mb-0" title={room.name}>
-              {room.name.length > 20 ? `${room.name.substring(0, 20)}...` : room.name}
-            </h5>} 
-           
-           <div className=" container d-flex justify-content-end">
             
-                <button className="btn btn-danger me-2" onClick={handleChangeRoomName}>
-                    <TbArrowsExchange className="mb-1 me-2" />
-                    <span className="d-none d-md-inline">Change Room name</span>
-                </button>
-                <button className="btn btn-success me-2" onClick={handleShowInvite}>
-                    <MdOutlineGroupAdd className="mb-1 me-2" />
-                    <span className="d-none d-md-inline">Invite</span>
-                </button>
-                <button className="btn btn-secondary me-2" onClick={handleShowModal}>
-                    <FaCircleQuestion className="mb-1 me-2" />
-                    <span className="d-none d-md-inline">Add Quiz</span>
-                </button>
-                <button className="btn btn-secondary" onClick={handleShowMemberModal}>
-                    <FaUsersGear className="mb-1 me-2" />
-                    <span className="d-none d-md-inline">Members ({members.length})</span>
-                </button>
-                <button className="btn btn-success me-2 ms-2" onClick={handlePlayGame}>
-                    <MdSmartDisplay className="mb-1 me-2" />
-                    <span className="d-none d-md-inline">Play Game</span>
-                </button>
+            <Container fluid className="flex-grow-1 py-4 px-lg-5">
+                <Row className="h-100 g-4">
+                    {/* Left Sidebar - Members & Options */}
+                    <Col lg={3} className="d-none d-lg-block">
+                        <Card className="room-sidebar shadow-sm h-100">
+                            <Card.Header className="bg-primary text-white py-3">
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <h5 className="mb-0 text-truncate">
+                                        Room Members <Badge bg="light" text="dark">{members.length}</Badge>
+                                    </h5>
+                                    <Button 
+                                        variant="light" 
+                                        size="sm" 
+                                        className="rounded-circle p-1"
+                                        onClick={handleShowMemberModal}
+                                    >
+                                        <FaUsersGear />
+                                    </Button>
+                                </div>
+                            </Card.Header>
+                            <Card.Body className="p-0 member-list">
+                                <div className="p-3">
+                                    <InputGroup size="sm" className="mb-3">
+                                        <Form.Control
+                                            placeholder="Search members..."
+                                            aria-label="Search members"
+                                        />
+                                    </InputGroup>
+                                </div>
+                                <ul className="list-group list-group-flush">
+                                    {members.map((member, index) => (
+                                        <motion.li 
+                                            key={index}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            className="list-group-item border-0 d-flex align-items-center px-3 py-2"
+                                        >
+                                            <div className="member-avatar me-2">
+                                                {member.username.charAt(0).toUpperCase()}
+                                            </div>
+                                            <span className="text-truncate">
+                                                {member.username}
+                                            </span>
+                                            {member.username === username && (
+                                                <Badge bg="primary" className="ms-auto">You</Badge>
+                                            )}
+                                        </motion.li>
+                                    ))}
+                                </ul>
+                            </Card.Body>
+                            <Card.Footer className="p-3 bg-white">
+                                <Button 
+                                    variant="primary" 
+                                    className="w-100 d-flex align-items-center justify-content-center"
+                                    onClick={handleShowInvite}
+                                >
+                                    <MdOutlineGroupAdd className="me-2" />
+                                    Invite Others
+                                </Button>
+                            </Card.Footer>
+                        </Card>
+                    </Col>
+                    
+                    {/* Main Chat Area */}
+                    <Col lg={9} md={12}>
+                        <Card className="chat-container shadow-sm h-100">
+                            <Card.Header className="d-flex justify-content-between align-items-center py-3">
+                                <div className="d-flex align-items-center">
+                                    {room && (
+                                        <>
+                                            <div className="room-avatar me-2">
+                                                {room.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <h5 className="mb-0 room-title text-truncate" title={room?.name}>
+                                                    {room?.name}
+                                                </h5>
+                                                <small className="text-muted">
+                                                    {members.length} members • Active now
+                                                </small>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                                
+                                <div className="d-flex">
+                                    <Button 
+                                        variant="success"
+                                        className="d-flex align-items-center me-2"
+                                        onClick={handlePlayGame}
+                                    >
+                                        <FaPlay size={16} className="me-2" />
+                                        <span className="d-none d-md-inline">Play Quiz</span>
+                                    </Button>
+                                    
+                                    <Dropdown align="end">
+                                        <Dropdown.Toggle variant="light" id="dropdown-room-options" className="rounded-circle p-2">
+                                            <MdMoreVert />
+                                        </Dropdown.Toggle>
+
+                                        <Dropdown.Menu className="shadow-sm border-0">
+                                            <Dropdown.Item onClick={handleShowModal}>
+                                                <FaCircleQuestion className="me-2 text-primary" />
+                                                Add Quiz
+                                            </Dropdown.Item>
+                                            <Dropdown.Item onClick={handleChangeRoomName}>
+                                                <TbArrowsExchange className="me-2 text-danger" />
+                                                Change Room Name
+                                            </Dropdown.Item>
+                                            <Dropdown.Item onClick={handleShowMemberModal}>
+                                                <FaUsersGear className="me-2 text-secondary" />
+                                                Manage Members
+                                            </Dropdown.Item>
+                                            <Dropdown.Divider />
+                                            <Dropdown.Item onClick={handleCopyRoomLink}>
+                                                <FaRegCopy className="me-2 text-info" />
+                                                Copy Room Link
+                                            </Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                </div>
+                            </Card.Header>
+                            
+                            <Card.Body className="p-0 position-relative">
+                                <div 
+                                    className="chat-messages p-3"
+                                    ref={chatContainerRef}
+                                    style={{ height: "calc(100vh - 260px)", overflowY: "auto" }}
+                                >
+                                    {messages.length === 0 ? (
+                                        <div className="text-center py-5 text-muted">
+                                            <MdSmartDisplay size={50} className="mb-3 text-primary opacity-50" />
+                                            <h5>Welcome to the Room!</h5>
+                                            <p>Start chatting or play a quiz with your friends.</p>
+                                        </div>
+                                    ) : (
+                                        messages.map((msg, index) => {
+                                            const isCurrentUser = msg.username === username;
+                                            const showAvatar = index === 0 || messages[index - 1]?.username !== msg.username;
+                                            
+                                            return (
+                                                <motion.div 
+                                                    key={index} 
+                                                    className={`message-container ${isCurrentUser ? 'current-user' : ''} mb-2`}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.3 }}
+                                                >
+                                                    <div className="d-flex">
+                                                        {!isCurrentUser && showAvatar && (
+                                                            <div className="me-2">
+                                                                {msg.userAvatar ? (
+                                                                    <img 
+                                                                        src={msg.userAvatar} 
+                                                                        alt={`${msg.username}'s avatar`}
+                                                                        className="message-avatar"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="message-avatar-placeholder">
+                                                                        {msg.username.charAt(0).toUpperCase()}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <div className={`message-content-wrapper ${isCurrentUser ? 'ms-auto' : ''}`}>
+                                                            {!isCurrentUser && showAvatar && (
+                                                                <div className="message-username">
+                                                                    {msg.username}
+                                                                </div>
+                                                            )}
+                                                            
+                                                            <div className={`message-bubble ${isCurrentUser ? 'current-user-bubble' : 'other-user-bubble'}`}>
+                                                                {msg.message}
+                                                                <span className="message-time">
+                                                                    {formatTime(msg.timestamp || new Date())}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {isCurrentUser && showAvatar && (
+                                                            <div className="ms-2 d-none d-md-block">
+                                                                {msg.userAvatar ? (
+                                                                    <img 
+                                                                        src={msg.userAvatar} 
+                                                                        alt={`${msg.username}'s avatar`}
+                                                                        className="message-avatar"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="message-avatar-placeholder">
+                                                                        {msg.username.charAt(0).toUpperCase()}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                </div>
+                            </Card.Body>
+                            
+                            <Card.Footer className="p-3 bg-white">
+                                <Form onSubmit={handleSendMessage}>
+                                    <InputGroup>
+                                        <Form.Control
+                                            placeholder="Type a message..."
+                                            value={inputMessage}
+                                            onChange={(e) => setInputMessage(e.target.value)}
+                                            className="py-2"
+                                        />
+                                        <Button 
+                                            variant="primary" 
+                                            type="submit"
+                                            disabled={!inputMessage.trim()}
+                                            className="d-flex align-items-center"
+                                        >
+                                            <MdSend />
+                                            <span className="ms-2 d-none d-md-inline">Send</span>
+                                        </Button>
+                                    </InputGroup>
+                                </Form>
+                            </Card.Footer>
+                        </Card>
+                    </Col>
+                </Row>
+            </Container>
+            
+            {/* Mobile bottom navigation bar */}
+            <div className="d-lg-none fixed-bottom bg-white shadow-lg p-2 border-top">
+                <Row className="text-center g-0">
+                    <Col xs={3}>
+                        <Button 
+                            variant="light" 
+                            className="rounded-circle p-2"
+                            onClick={handleShowMemberModal}
+                        >
+                            <FaUsersGear />
+                            <div className="small mt-1">Members</div>
+                        </Button>
+                    </Col>
+                    <Col xs={3}>
+                        <Button 
+                            variant="light" 
+                            className="rounded-circle p-2"
+                            onClick={handleShowInvite}
+                        >
+                            <MdOutlineGroupAdd />
+                            <div className="small mt-1">Invite</div>
+                        </Button>
+                    </Col>
+                    <Col xs={3}>
+                        <Button 
+                            variant="light" 
+                            className="rounded-circle p-2"
+                            onClick={handleShowModal}
+                        >
+                            <FaCircleQuestion />
+                            <div className="small mt-1">Quiz</div>
+                        </Button>
+                    </Col>
+                    <Col xs={3}>
+                        <Button 
+                            variant="light" 
+                            className="rounded-circle p-2"
+                            onClick={handlePlayGame}
+                        >
+                            <FaPlay />
+                            <div className="small mt-1">Play</div>
+                        </Button>
+                    </Col>
+                </Row>
             </div>
-           </div>
-           <ChoiceName 
+            
+            {/* Modals */}
+            <ChoiceName 
                 show={showModal} 
                 onClose={() => setShowModal(false)}
                 onSubmit={handleSetUsername}
             />
-        <div className="container">
-           
-            <div 
-             id="chat"
-            style={{
-                border: "1px solid #000", 
-                height: "500px", 
-                overflowY: "scroll",
-                marginTop: "20px",
-                width: "",
-            }}
-            >
-                {messages.map((msg, index) => (
-                     <div 
-                     key={index} 
-                     style={{
-                         display: 'flex',
-                         alignItems: 'center',
-                         margin: '10px 0',
-                         padding: '5px'
-                     }}
-                 >
-                     {msg.userAvatar ? (
-                         <img 
-                             src={msg.userAvatar} 
-                             alt={`${msg.username}'s avatar`}
-                             style={{
-                                 width: '40px',
-                                 height: '40px',
-                                 borderRadius: '50%',
-                                 marginRight: '10px',
-                                 objectFit: 'cover'
-                             }}
-                         />
-                     ) : (
-                         <div 
-                             style={{
-                                 width: '40px',
-                                 height: '40px',
-                                 borderRadius: '50%',
-                                 marginRight: '10px',
-                                 backgroundColor: '#ccc',
-                                 display: 'flex',
-                                 alignItems: 'center',
-                                 justifyContent: 'center',
-                                 fontSize: '18px'
-                             }}
-                         > 
-                             {msg.username.charAt(0).toUpperCase()}
-                         </div>
-                     )}
-                     <div>
-                         <strong style={{color:"red"}}>{msg.username}: </strong>
-                         {msg.message}
-                     </div>
-                 </div>
-                ))}
-            </div>
-        </div>
-           
-            <div style={{
-                
-            }}
-                className="mt-5 mb-5 container"
-            >
-                <input
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Type a message"
-                    className="me-5"
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(e)}
-                />
-                <button 
-                    onClick={handleSendMessage}
-                    className="btn btn-secondary w-100 mb-5 "
-                >
-                    Send
-                </button>
-            </div>
-            {showModelAddQuiz && <AddQuiz show={showModelAddQuiz} onClose={() => setShowModelAddQuiz(false)} />}
             
-            {showModelMembers && <ViewMember 
-            show={showModelMembers}
-            onClose={() => setShowModelMembers(false)} 
-            members={members}
-            />}
-            {changeRoom && <ChangeRoomName
-            show={changeRoom}
-            onClose={() => setChangeRoom(false)}
-            room={room}
-            />}
-
-            {showInviteUser && <InviteUser
-            show={showInviteUser}
-            onClose={() => setShowInviteUser(false)}
-            url={apiUrl + roomId}
-            />}
-            {showPlayGame && <PlayGameModal
-            show={showPlayGame}
-            onClose={() => {
-                setShowPlayGame(false); 
-                endGame(roomId);
-                localStorage.removeItem(`gameInProgress_${roomId}`);
-            }}
+            {showModelAddQuiz && 
+                <AddQuiz 
+                    show={showModelAddQuiz} 
+                    onClose={() => setShowModelAddQuiz(false)} 
+                />
+            }
+            
+            {showModelMembers && 
+                <ViewMember 
+                    show={showModelMembers}
+                    onClose={() => setShowModelMembers(false)} 
+                    members={members}
+                />
+            }
+            
+            {changeRoom && 
+                <ChangeRoomName
+                    show={changeRoom}
+                    onClose={() => setChangeRoom(false)}
+                    room={room}
+                />
+            }
+            
+            {showInviteUser && 
+                <InviteUser
+                    show={showInviteUser}
+                    onClose={() => setShowInviteUser(false)}
+                    url={apiUrl + roomId}
+                />
+            }
+            
+            {showPlayGame && 
+                <PlayGameModal
+                    show={showPlayGame}
+                    onClose={() => {
+                        setShowPlayGame(false); 
+                        endGame(roomId);
+                        localStorage.removeItem(`gameInProgress_${roomId}`);
+                    }}
                     currentQuestion={currentQuestion}
                     timer={timer}
                     showResults={showResults}
@@ -390,11 +601,12 @@ const ChatPage = () => {
                     finalResults={finalResults}
                     onAnswer={(answer) => sendAnswer(roomId, answer)}
                     currentQuestionNumber={currentQuestionNumber}
-            totalQuestions={totalQuestions}
-            onRestart={handleRestartGame}
-
-            />}
-            <Footer/>
+                    totalQuestions={totalQuestions}
+                    onRestart={handleRestartGame}
+                />
+            }
+            
+          
         </div>
     );
 };
