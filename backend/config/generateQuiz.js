@@ -3,7 +3,6 @@ import axios from 'axios';
 import { PDFExtract } from 'pdf.js-extract';
 import fs from 'fs';
 import path from 'path';
-import { createWorker } from 'tesseract.js';
 import {fetchImage} from './googleSearch.js';
 // Khắc phục lỗi file test của pdf-parse
 const testDir = path.join(process.cwd(), 'backend', 'test', 'data');

@@ -34,3 +34,33 @@ export const createQuizFunctionDeclaration = {
       required: ["topics", "questionTypes", "numberOfQuestions","difficulty"]
     }
   };
+
+  export const describeWebsiteDeclaration = {
+    name: "describeWebsite",
+    description: "Cung cấp thông tin giới thiệu về trang web này cho người dùng",
+    parameters: {
+      type: "object",
+      properties: {
+        websiteType: {
+          type: "string",
+          description: "Loại trang web (ví dụ: giáo dục, thương mại điện tử, mạng xã hội, v.v.)"
+        },
+        mainFeatures: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Danh sách các tính năng chính của trang web"
+        },
+        targetAudience: {
+          type: "string",
+          description: "Đối tượng người dùng mà trang web hướng đến"
+        },
+        purpose: {
+          type: "string",
+          description: "Mục đích chính của trang web là gì"
+        }
+      },
+      required: ["websiteType", "mainFeatures", "purpose"]
+    }
+  };

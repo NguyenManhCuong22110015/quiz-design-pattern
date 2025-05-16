@@ -162,3 +162,41 @@
     font-size: 20px;
   }
 }
+/* Add to your Chatbot.css */
+.message-content .markdown-content {
+  width: 100%;
+}
+
+.message-content pre {
+  background-color: #f0f0f0;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.message-content code {
+  font-family: monospace;
+  background-color: #f0f0f0;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* Make sure links are visible in both light and dark message bubbles */
+.bot-message a {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+.user-message a {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.small-text {
+  font-size: 0.75rem; /* Adjust size as needed */
+}
+
+/* Make sure code blocks and other markdown elements also have appropriate smaller sizing */
+.small-text pre, .small-text code {
+  font-size: 0.8rem;
+}

@@ -1,7 +1,7 @@
 import { API } from "../utils/apiFunctions";
 
 export async function getQuizzesByUserId(userId) {
-    const response = await API.get("api/quizzes/getByUserId?userId=" + userId);
+    const response = await API.get("api/quizzes/getAllQuiz?userId=" + userId);
     return response.data;
 };
 

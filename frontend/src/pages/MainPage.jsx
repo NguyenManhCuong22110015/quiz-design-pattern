@@ -11,6 +11,7 @@ import "./../styles/DailyChallengesSection.css";
 import { use } from 'react'
 import { getChallengesQuiz } from '../api/quizzApi'
 
+import Chatbot from '../components/common/Chatbot'
 
 
 const MainPa = () => {
@@ -45,6 +46,7 @@ const MainPa = () => {
       <GameDemoSection />
       <CTASection />
       <Footer />
+      <Chatbot/>
     </div>
   )
 }

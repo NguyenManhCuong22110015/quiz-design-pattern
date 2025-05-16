@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button, Card, Form, InputGroup } from 'react-bootstrap';
 import {  FaTimes, FaPaperPlane } from 'react-icons/fa';
 import { SiDependabot } from "react-icons/si";
-
+import {getDataByPrompt} from '../../api/chatbotApi'; // Giả lập API chatbot
 import { RiRobot3Fill } from "react-icons/ri";
+import ReactMarkdown from 'react-markdown'; // Import Markdown renderer
 
 import '../../styles/Chatbot.css'; 
 
@@ -54,39 +55,63 @@ const Chatbot = () => {
       time: new Date()
     };
 
+    const currentMessage = newMessage;
     setMessages([...messages, userMessage]);
     setNewMessage('');
     setIsTyping(true);
 
     // Giả lập bot đang trả lời
-    setTimeout(() => {
-      // Tin nhắn trả lời của bot
-      const botMessage = {
-        id: messages.length + 2,
-        text: getBotResponse(newMessage),
-        sender: 'bot',
-        time: new Date()
-      };
+    setTimeout(async () => {
+      try {
+        // Await the response
+        const response = await getBotResponse(currentMessage);
+        
+        // Tin nhắn trả lời của bot
+        const botMessage = {
+          id: messages.length + 2,
+          text: response,
+          sender: 'bot',
+          time: new Date()
+        };
 
-      setMessages(prevMessages => [...prevMessages, botMessage]);
-      setIsTyping(false);
+        setMessages(prevMessages => [...prevMessages, botMessage]);
+      } catch (error) {
+        console.error("Error getting bot response:", error);
+        // Handle error - maybe show an error message
+        const errorMessage = {
+          id: messages.length + 2,
+          text: "Sorry, I encountered an error processing your request.",
+          sender: 'bot',
+          time: new Date()
+        };
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
+      } finally {
+        setIsTyping(false);
+      }
     }, 1500);
   };
 
   // Hàm giả lập trả lời của bot (sẽ thay bằng API thực tế sau)
-  const getBotResponse = (message) => {
-    const lowerMessage = message.toLowerCase();
-    
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('xin chào')) {
-      return 'Xin chào! Tôi có thể giúp gì cho bạn?';
-    } else if (lowerMessage.includes('quiz') || lowerMessage.includes('trắc nghiệm')) {
-      return 'Hệ thống của chúng tôi cung cấp nhiều bài trắc nghiệm thú vị. Bạn có thể tạo bài mới hoặc tham gia bài có sẵn!';
-    } else if (lowerMessage.includes('account') || lowerMessage.includes('tài khoản')) {
-      return 'Bạn có thể quản lý tài khoản của mình trong mục "Tài khoản" ở thanh điều hướng.';
-    } else if (lowerMessage.includes('how') || lowerMessage.includes('làm sao')) {
-      return 'Để tạo bài trắc nghiệm, nhấn vào nút "Tạo Quiz" trên trang chủ và làm theo hướng dẫn.';
-    } else {
-      return 'Cảm ơn câu hỏi của bạn! Tôi sẽ tìm hiểu thêm và trả lời bạn sớm nhất có thể.';
+  const getBotResponse = async (message) => {
+    try {
+      const lowerMessage = message.toLowerCase();
+      
+      if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('xin chào')) {
+        return 'Xin chào! Tôi có thể giúp gì cho bạn?';
+      } else {
+        const response = await getDataByPrompt(message); 
+        console.log("Bot response:", response);
+        
+        // Check if we got a valid response
+        if (response && response.trim() !== '') {
+          return response;
+        } else {
+          return 'Tôi không hiểu câu hỏi của bạn. Bạn có thể thử lại không?';
+        }
+      }
+    } catch (error) {
+      console.error("Error in getBotResponse:", error);
+      return 'Xin lỗi, đã xảy ra lỗi khi xử lý yêu cầu của bạn. Bạn có thể thử lại không?';
     }
   };
 
@@ -133,7 +158,9 @@ const Chatbot = () => {
                   className={`message ${msg.sender === 'user' ? 'user-message' : 'bot-message'}`}
                 >
                   <div className="message-content">
-                    <p className="mb-0">{msg.text}</p>
+                    <p className="mb-0 small-text "  >
+                      <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    </p>
                     <small className="message-time">{formatTime(msg.time)}</small>
                   </div>
                 </div>

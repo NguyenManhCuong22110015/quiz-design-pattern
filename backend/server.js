@@ -19,6 +19,9 @@ import authRoutes from './routes/authRoute.js';
 import facebook from './authentication/facebook.js';
 import resultRoutes from './routes/resultRoute.js';
 import commentRoutes from './routes/commentRoute.js';
+import chatbotRoutes from './routes/chatbotRoute.js'
+
+
 dotenv.config(); 
 
 const app = express();
@@ -35,7 +38,9 @@ const store = new MongoDBStore({
 
 
 app.use(cors({
-    origin: [ process.env.FRONTEND_API,'https://webmern-nmcuong08s-projects.vercel.app', "https://webmern.vercel.app","http://192.168.100.217:5173" ], 
+    origin: [ process.env.FRONTEND_API,'https://webmern-nmcuong08s-projects.vercel.app', "https://webmern.vercel.app","http://192.168.100.217:5173" ,
+        "http://192.168.56.1:5000"
+    ], 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     optionsSuccessStatus: 200
 }));
@@ -79,7 +84,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/results', resultRoutes);
 app.use("/api/comments", commentRoutes)
-
+app.use('/api/chatbot', chatbotRoutes)
 
 server.listen(PORT, '0.0.0.0' ,() => {
     console.log(`Server running on http://localhost:${PORT}`);

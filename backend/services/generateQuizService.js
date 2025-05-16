@@ -1,7 +1,11 @@
 import 'dotenv/config.js'; 
 import {generateQuizGroqToJSON, extractTextFromPDF, generateQuizFromText} from "../config/generateQuiz.js"; 
 import {GoogleGenerativeAI} from "@google/generative-ai"
-import {createQuizFunctionDeclaration} from "./functionDeclaration.js";
+import {createQuizFunctionDeclaration, 
+        describeWebsiteDeclaration} from "./functionDeclaration.js";
+import {setQuiz, describeWebsiteInfo} from "./functionCall.js";
+
+
 const genAI = new GoogleGenerativeAI(process.env.API);
 
 
@@ -9,27 +13,23 @@ const genAI = new GoogleGenerativeAI(process.env.API);
     model: 'gemini-1.5-pro',
     tools: [
       {
-        functionDeclarations: [createQuizFunctionDeclaration],
+        functionDeclarations: [createQuizFunctionDeclaration,
+                              describeWebsiteDeclaration
+        ],
       },
     ],
   });
   
-  async function setQuiz(topics, questionTypes, numberOfQuestions, difficulty) {
-    console.log("💡 Topics:", topics);
-    console.log("🎨Question Types:", questionTypes);
-    console.log("Number Of Questions:", numberOfQuestions);
   
-    return {
-        topics,
-        questionTypes,
-        numberOfQuestions,
-        difficulty
-    };
-  }
 
   const functions = {
     createQuiz: ({ topics, questionTypes, numberOfQuestions, difficulty }) => {
       return setQuiz(topics, questionTypes, numberOfQuestions, difficulty);
+    },
+    describeWebsite: ({ websiteType, mainFeatures, purpose }) => {
+      return describeWebsiteInfo("Quiz online", 
+        ["Tạo quiz","Chơi quiz", "Quản lý tài khoản", "Tìm kiếm quiz",  "Tạo Room và chơi quiz trong room"],
+        "Toàn bộ người dùng có như cầu", purpose="Giúp người dùng tạo quiz và chơi quiz",);
     },
   };
   
@@ -64,6 +64,31 @@ const genAI = new GoogleGenerativeAI(process.env.API);
       return [];
     }
   }
+
+  export async function initChatBot(prompt) {
+    try {
+      const chat = await generativeModel.startChat();
+      
+      const result = await chat.sendMessage(prompt);
+
+      const call = result.response.functionCalls()?.[0];
+
+      if (call) {
+         
+        const apiResponse = await functions[call.name](call.args);
+        return apiResponse;
+      } else {
+        console.log("❌ Không có function call nào được tạo!");
+       
+      }
+    } catch (error) {
+      console.error("❌ Lỗi trong quá trình tạo quiz:", error);
+      // Trả về mảng rỗng thay vì null
+      return [];
+    }
+  }
+
+
   
   export async function generateQuizFromPDF(pdf) {
     try {
