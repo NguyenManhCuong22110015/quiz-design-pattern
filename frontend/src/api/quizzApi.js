@@ -23,11 +23,10 @@ export async function rateQuiz(quizId, rating) {
     }
   }
 
-export async function getAllQuizzes(userId) {
-    const response = await API.get("api/quizzes/getAll?userId=" + userId);
+export async function getAllQuizzes() {
+    const response = await API.get("api/quizzes/getAll");
     return response.data;
 };
-
 export async function getQuizzesInRooms(roomId){
     const response = await API.get("api/rooms/getQuizzes?roomId=" + roomId);
     return response.data;
@@ -43,8 +42,6 @@ export async function getQuizzesByCategory(category) {
     const response = await API.get("api/quizzes/getByCategory?category=" + category);
     return response.data;
 }
-
-
 
 
 export async function createQuiz(data) {

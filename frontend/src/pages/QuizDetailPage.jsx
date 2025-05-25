@@ -13,6 +13,8 @@ import Ranking from '../components/common/Ranking';
 import { getTopTenPlayers } from '../api/resuiltAPI';
 import RateQuiz from '../components/Quizz/RateQuiz';
 import error from '../assets/error.jpg'
+import { quizScoreSubject } from '../patterns/QuizObserver';
+
 const QuizDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -62,6 +64,114 @@ const QuizDetailPage = () => {
     
     fetchQuizData();
   }, [id, currentUser]);
+
+  
+  // Thêm ngay sau useEffect của observer pattern
+  useEffect(() => {
+    // Xử lý sự kiện thay đổi localStorage (giao tiếp giữa các tab)
+    const handleStorageChange = (e) => {
+      if (e.key === 'quiz_score_update') {
+        try {
+          const data = JSON.parse(e.newValue);
+          if (data && data.quizId === id) {
+            console.log('Nhận cập nhật điểm số từ tab khác:', data);
+            
+            // Sử dụng logic tương tự như trong phương thức update của observer
+            const existingPlayerIndex = topPlayers.findIndex(player => player.userId === data.userId);
+            
+            if (existingPlayerIndex !== -1) {
+              // Cập nhật điểm số của người chơi đã có
+              const updatedPlayers = [...topPlayers];
+              updatedPlayers[existingPlayerIndex] = {
+                ...updatedPlayers[existingPlayerIndex],
+                score: data.score,
+                endTime: new Date(data.timestamp)
+              };
+              
+              // Sắp xếp theo điểm số và cập nhật state
+              const sortedPlayers = [...updatedPlayers].sort((a, b) => b.score - a.score);
+              setTopPlayers(sortedPlayers.slice(0, 10)); // Giữ top 10
+              
+              // Hiển thị thông báo
+              toast.info(`${data.userName} cập nhật điểm số lên ${data.score}!`, {
+                position: "bottom-right",
+                autoClose: 3000
+              });
+            } else {
+              // Thêm người chơi mới nếu chưa đủ 10 người hoặc điểm cao hơn người thấp nhất
+              if (topPlayers.length < 10 || data.score > topPlayers[topPlayers.length-1].score) {
+                const newPlayer = {
+                  userId: data.userId,
+                  name: data.userName,
+                  email: data.userName,
+                  score: data.score,
+                  endTime: new Date(data.timestamp)
+                };
+                
+                // Thêm vào danh sách, sắp xếp và cắt lấy top 10
+                const updatedPlayers = [...topPlayers, newPlayer]
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, 10);
+                  
+                setTopPlayers(updatedPlayers);
+                
+                // Hiển thị thông báo
+                toast.success(`${data.userName} tham gia bảng xếp hạng với ${data.score} điểm!`, {
+                  position: "bottom-right",
+                  autoClose: 3000
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi khi xử lý cập nhật từ localStorage:', error);
+        }
+      }
+    };
+    
+    // Đăng ký lắng nghe sự kiện storage
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Hủy đăng ký khi component unmount
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [id, topPlayers]);
+
+  // Thêm useEffect mới ngay sau useEffect hiện có
+  useEffect(() => {
+      // Kiểm tra khi trang được tải nếu user đã hoàn thành quiz này
+      const checkCompletedQuiz = () => {
+          if (currentUser && id) {
+              const completedQuizKey = `completed_quiz_${id}_${currentUser.id}`;
+              const completedQuizData = localStorage.getItem(completedQuizKey);
+              
+              if (completedQuizData) {
+                  try {
+                      const quizInfo = JSON.parse(completedQuizData);
+                      
+                      // Chỉ hiển thị toast nếu chưa xem
+                      if (!quizInfo.viewed) {
+                          toast.success(`Người chơi đã hoàn thành quiz với điểm số ${quizInfo.score}!`, {
+                              position: "top-center",
+                              autoClose: 5000
+                          });
+                          
+                          // Đánh dấu là đã xem để không hiện lại
+                          quizInfo.viewed = true;
+                          localStorage.setItem(completedQuizKey, JSON.stringify(quizInfo));
+                      }
+                  } catch (error) {
+                      console.error('Lỗi khi xử lý thông tin quiz đã hoàn thành:', error);
+                  }
+              }
+          }
+      };
+      
+      // Chạy kiểm tra khi component mount
+      checkCompletedQuiz();
+      
+  }, [currentUser, id]);
 
   const handleStartQuiz = () => {
     navigate(`/play/${id}`);
