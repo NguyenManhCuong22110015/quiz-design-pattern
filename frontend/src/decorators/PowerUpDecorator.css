@@ -1,0 +1,25 @@
+.powerup-btn {
+    margin: 0 8px 0 0;
+    padding: 10px 18px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    background: #e3e6fd;
+    color: #1a237e;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(26, 35, 126, 0.08);
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.powerup-btn.active {
+    background: #536dfe;
+    color: #fff;
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px rgba(83, 109, 254, 0.18);
+}
+
+.powerup-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

@@ -1,0 +1,12 @@
+.confidence-decorator {
+    margin: 16px 0;
+}
+.confidence-slider {
+    width: 100%;
+}
+.confidence-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+}

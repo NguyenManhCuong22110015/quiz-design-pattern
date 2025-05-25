@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="4a1eb73c-8b24-4f62-b537-3132a8510419" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/backend/decorators/comboDecorator.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/decorators/confidenceDecorator.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/decorators/powerUpDecorator.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/decorators/ComboProgressBar.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/decorators/ConfidenceDecorator.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/decorators/ConfidenceDecorator.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/decorators/MotivationalDecorator.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/decorators/MotivationalDecorator.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/decorators/PowerUpDecorator.jsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/decorators/useComboDecorator.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.env.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/Questions/QuestionGame.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/Questions/QuestionGame.jsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;nguyenanhhh&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/NguyenManhCuong22110015/quiz-design-pattern&quot;,
+    &quot;accountId&quot;: &quot;271268c2-cfa3-434b-8866-7484f7c0a73a&quot;
+  }
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="2xWrkRu2qeiu28jRfUzsZUo88hP" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/design pattern&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-fdfe4dae3a2d-intellij.indexing.shared.core-IU-243.22562.145" />
+        <option value="bundled-js-predefined-d6986cc7102b-deb605915726-JavaScript-IU-243.22562.145" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="4a1eb73c-8b24-4f62-b537-3132a8510419" name="Changes" comment="" />
+      <created>1748064813691</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1748064813691</updated>
+      <workItem from="1748064814931" duration="9858000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
