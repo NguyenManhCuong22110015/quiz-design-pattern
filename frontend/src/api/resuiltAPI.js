@@ -38,3 +38,13 @@ export  const getTopTenPlayers = async (quizId) => {
         throw error;
     }
 }
+
+export const checkAnswer = async (data) => {
+    try {
+        const response = await API.post(`/api/results/submit-answer`, data);
+        return response.data.score;
+    } catch (error) {
+        console.error('Error checking answer:', error);
+        throw error;
+    }
+};

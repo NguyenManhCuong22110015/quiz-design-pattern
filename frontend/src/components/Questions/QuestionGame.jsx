@@ -18,6 +18,16 @@ const QuestionGame = ({
   questionNumber,
   totalQuestions,
   onAnswer,
+import { FiCheck, FiX, FiCheckCircle } from 'react-icons/fi';
+
+const QuestionGame = ({ 
+  question, 
+  questionNumber, 
+  totalQuestions, 
+  onAnswerSelect, // Thay đổi từ onAnswer thành onAnswerSelect
+  selectedAnswer: propSelectedAnswer, // Nhận selectedAnswer từ parent
+  showResult, // Nhận showResult từ parent
+  answerFeedback, // Nhận answerFeedback từ parent
   defaultAnswer = null,
   isLocked
 }) => {
@@ -83,24 +93,34 @@ const QuestionGame = ({
         setTextAnswer(defaultAnswer);
         setAnswered(true);
       } else {
-        // For multiple choice questions, find the index of matching option
-        const defaultIndex = questionData.options?.findIndex(
-          opt => opt.option === defaultAnswer
-        );
-
-        if (defaultIndex !== -1) {
-          setSelectedAnswer(defaultIndex);
-          setAnswered(true);
-
-          // Check if answer is correct and update feedback
-          const isCorrect = questionData.options[defaultIndex].isCorrect;
-          setFeedback({
-            visible: true,
-            correct: isCorrect
-          });
-        } else {
-          setSelectedAnswer(null);
-          setAnswered(false);
+        // For multiple choice questions
+        if (questionData.type === 'MULTIPLE_ANSWER' && Array.isArray(defaultAnswer)) {
+          // Multiple answer: tìm các index của options được chọn
+          const defaultIndices = defaultAnswer.map(answer =>
+            questionData.options?.findIndex(opt => opt.option === answer)
+          ).filter(index => index !== -1);
+          
+          if (defaultIndices.length > 0) {
+            setSelectedAnswer(defaultIndices);
+            setAnswered(true);
+          }
+        } else if (questionData.type !== 'MULTIPLE_ANSWER') {
+          // Single answer: tìm index của option được chọn
+          const defaultIndex = questionData.options?.findIndex(
+            opt => opt.option === defaultAnswer
+          );
+  
+          if (defaultIndex !== -1) {
+            setSelectedAnswer(defaultIndex);
+            setAnswered(true);
+  
+            // Check if answer is correct and update feedback
+            const isCorrect = questionData.options[defaultIndex].isCorrect;
+            setFeedback({
+              visible: true,
+              correct: isCorrect
+            });
+          }
         }
       }
     } else {
@@ -159,10 +179,10 @@ const QuestionGame = ({
   // Handle answer selection for multiple choice
   const handleAnswerClick = (index) => {
     if (answered) return; // Prevent selecting another answer after first selection
-
+    
     setSelectedAnswer(index);
     setAnswered(true);
-
+    
     // Check if answer is correct
     const isCorrect = questionData?.options?.[index]?.isCorrect || false;
     const selectedOption = questionData?.options?.[index]?.option || '';
@@ -179,41 +199,105 @@ const QuestionGame = ({
     // Notify parent component about answer and score
     onAnswer(selectedOption, isCorrect, earnedPoints);
   };
+    
+    // Kiểm tra loại câu hỏi
+    if (questionData.type === 'MULTIPLE_ANSWER') {
+        // Cho phép chọn nhiều đáp án
+        setSelectedAnswer(prev => {
+            if (!prev || !Array.isArray(prev)) {
+                // Tạo mảng mới với index được chọn
+                const newSelection = [index];
+                // Gửi array các options được chọn lên parent
+                const newSelectedOptions = [selectedOption];
+                onAnswerSelect(newSelectedOptions);
+                return newSelection;
+            }
+            
+            // Toggle selection
+            let newSelection;
+            if (prev.includes(index)) {
+                newSelection = prev.filter(i => i !== index);
+            } else {
+                newSelection = [...prev, index];
+            }
+            
+            // Gửi array các options được chọn lên parent
+            const newSelectedOptions = newSelection.map(i => questionData.options[i]?.option).filter(Boolean);
+            onAnswerSelect(newSelectedOptions);
+            
+            return newSelection;
+        });
+    } else {
+        // Chỉ cho phép chọn một đáp án
+        setSelectedAnswer(index);
+        onAnswerSelect(selectedOption);
+    }
+};
 
   // Handle text answer submission
   const handleTextSubmit = (e) => {
     e.preventDefault();
-    if (answered || !textAnswer.trim()) return;
-
-    setAnswered(true);
-
-    // For text questions, we need to check if the answer matches any of the correct answers
-    const normalizedAnswer = textAnswer.trim().toLowerCase();
-
-    // Find correct answers from options
-    const correctAnswers = questionData.options
-      ? questionData.options
-        .filter(opt => opt.isCorrect)
-        .map(opt => opt.option.toLowerCase())
-      : [];
-
-    const isCorrect = correctAnswers.some(answer =>
-      normalizedAnswer === answer ||
-      answer.includes(normalizedAnswer) || normalizedAnswer.includes(answer)
-    );
-
-    // Calculate points
-    const earnedPoints = isCorrect ? points * multiplier + comboBonus : 0;
-
-    // Show feedback
-    setFeedback({
-      visible: true,
-      correct: isCorrect
-    });
-
-    // Notify parent component about answer and score
-    onAnswer(textAnswer, isCorrect, earnedPoints);
+    if (answered || !textAnswer.trim() || isLocked) return;
+    
+    // Chỉ thông báo về lựa chọn, KHÔNG kiểm tra đáp án
+    onAnswerSelect(textAnswer);
+    
+    // KHÔNG gọi setAnswered(true) ở đây
+    // KHÔNG hiển thị feedback ở đây
   };
+
+  // Sử dụng props từ parent để hiển thị kết quả
+  useEffect(() => {
+    if (showResult && answerFeedback) {
+        setAnswered(true);
+        setFeedback({
+            visible: true,
+            correct: answerFeedback.isCorrect
+        });
+        
+        // Cập nhật selectedAnswer từ props
+        if (propSelectedAnswer && questionData.options) {
+            if (questionData.type === 'MULTIPLE_ANSWER' && Array.isArray(propSelectedAnswer)) {
+                // Cho multiple answer, tìm các index của options được chọn
+                const answerIndices = propSelectedAnswer.map(answer => 
+                    questionData.options.findIndex(opt => opt.option === answer)
+                ).filter(index => index !== -1);
+                setSelectedAnswer(answerIndices);
+            } else if (questionData.type !== 'MULTIPLE_ANSWER') {
+                // Cho single answer
+                const answerIndex = questionData.options.findIndex(
+                    opt => opt.option === propSelectedAnswer
+                );
+                if (answerIndex !== -1) {
+                    setSelectedAnswer(answerIndex);
+                }
+            }
+        }
+    } else {
+        // KHÔNG reset answered ở đây nếu đã có defaultAnswer
+        if (!defaultAnswer) {
+            setAnswered(false);
+        }
+        setFeedback({ visible: false, correct: false });
+        
+        // Cập nhật selectedAnswer từ props
+        if (propSelectedAnswer && questionData.options) {
+            if (questionData.type === 'MULTIPLE_ANSWER' && Array.isArray(propSelectedAnswer)) {
+                // Cho multiple answer
+                const answerIndices = propSelectedAnswer.map(answer => 
+                    questionData.options.findIndex(opt => opt.option === answer)
+                ).filter(index => index !== -1);
+                setSelectedAnswer(answerIndices);
+            } else if (questionData.type !== 'MULTIPLE_ANSWER') {
+                // Cho single answer
+                const answerIndex = questionData.options.findIndex(
+                    opt => opt.option === propSelectedAnswer
+                );
+                setSelectedAnswer(answerIndex !== -1 ? answerIndex : null);
+            }
+        }
+    }
+}, [showResult, answerFeedback, propSelectedAnswer, questionData.options, defaultAnswer, questionData.type]);
 
   // Animation variants for framer-motion - cải thiện để mượt và chuyên nghiệp hơn
   const questionVariants = {
@@ -308,8 +392,8 @@ const QuestionGame = ({
               alt="Question illustration"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
-                e.target.className = "error-image";
+                e.target.src = 'https://placehold.co/400x300?text=Image+Unavailable';
+                e.target.className = "error-image"; 
               }}
             />
           </div>
@@ -376,6 +460,66 @@ const QuestionGame = ({
   const renderRichText = (htmlContent) => {
     const sanitizedHtml = DOMPurify.sanitize(htmlContent);
     return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
+  };
+
+  // Sửa lại phần render để hiển thị đúng
+  const renderAnswerButton = (option, index) => {
+    const isSelected = questionData.type === 'MULTIPLE_ANSWER' 
+        ? (Array.isArray(selectedAnswer) && selectedAnswer.includes(index))
+        : selectedAnswer === index;
+        
+    const isCorrect = showResult && answerFeedback && option.isCorrect;
+    const isWrong = showResult && answerFeedback && isSelected && !answerFeedback.isCorrect;
+    
+    let variant = "outline-primary";
+    if (showResult && answerFeedback) {
+        if (isCorrect) {
+            variant = "success";
+        } else if (isWrong) {
+            variant = "danger";
+        } else if (isSelected) {
+            variant = "outline-primary";
+        } else {
+            variant = "outline-secondary";
+        }
+    } else if (isSelected) {
+        variant = "primary";
+    }
+
+    return (
+        <Button 
+            variant={variant}
+            className={`w-100 py-3 position-relative answer-button ${!answered && !isLocked ? 'answer-button-hover' : ''}`}
+            onClick={() => !answered && !isLocked && handleAnswerClick(index)}
+            disabled={answered || isLocked}
+            style={{
+                borderRadius: '12px',
+                border: '2px solid',
+                transition: 'all 0.3s ease',
+                minHeight: '80px'
+            }}
+        >
+            <div className="d-flex align-items-center justify-content-between">
+                <span className="flex-grow-1 text-start">{option.option}</span>
+                <div className="ms-2 d-flex align-items-center">
+                    {/* Hiển thị checkbox cho multiple answer */}
+                    {questionData.type === 'MULTIPLE_ANSWER' && (
+                        <div className={`me-2 ${isSelected ? 'text-white' : 'text-muted'}`}>
+                            {isSelected ? '☑️' : '☐'}
+                        </div>
+                    )}
+                    
+                    {/* Hiển thị kết quả */}
+                    {showResult && answerFeedback && (
+                        <>
+                            {isCorrect && <FiCheckCircle className="text-white" size={20} />}
+                            {isWrong && <FiX className="text-white" size={20} />}
+                        </>
+                    )}
+                </div>
+            </div>
+        </Button>
+    );
   };
 
   return (

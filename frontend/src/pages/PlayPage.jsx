@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import NavBar from '../layout/NavBar'
 import CreateLoading from '../components/common/CreateLoading'
 import { useAuth } from '../contexts/AuthContext'
-import { checkProcess, initialResult, addAnswerToResult, completeResult } from '../api/resuiltAPI'
+import { checkProcess, initialResult, addAnswerToResult, completeResult, checkAnswer } from '../api/resuiltAPI'
 import { showError, showSuccess } from '../components/common/Notification'
 import { FiClock, FiAward, FiCheckCircle, FiHelpCircle, FiChevronRight, FiFlag } from 'react-icons/fi'
 import { quizScoreSubject } from '../patterns/QuizObserver';
@@ -20,23 +20,25 @@ const PlayPage = () => {
     const [answered, setAnswered] = useState(false);
     const [countdown, setCountdown] = useState(5);
     const [showCountdown, setShowCountdown] = useState(true);
-    
-    const [result, setResult] = useState(null);  
-    const [userAnswers, setUserAnswers] = useState([]); 
-    const [pendingAnswers, setPendingAnswers] = useState([]); 
+
+    const [result, setResult] = useState(null);
+    const [userAnswers, setUserAnswers] = useState([]);
+    const [pendingAnswers, setPendingAnswers] = useState([]);
     const [isInitialized, setIsInitialized] = useState(false);
     const [disableAnswerChange, setDisableAnswerChange] = useState(false);
-    
+    const [selectedAnswer, setSelectedAnswer] = useState(null);
+    const [showResult, setShowResult] = useState(false);
+    const [answerFeedback, setAnswerFeedback] = useState(null);
     // Lấy ID từ đường dẫn và thông tin người dùng
     const { id } = useParams();
     const { currentUser } = useAuth();
     const navigate = useNavigate();
-    
+
     // Tham chiếu cho timer lưu kết quả tự động
     const autoSaveTimerRef = useRef(null);
     // Thêm ref để theo dõi việc đã khởi tạo chưa
     const isInitializedRef = useRef(false);
-    
+
     // 1. Kiểm tra người dùng đã đăng nhập chưa và load dữ liệu
     useEffect(() => {
         if (!currentUser) {
@@ -44,48 +46,51 @@ const PlayPage = () => {
             navigate('/login', { state: { from: `/play/${id}` } });
             return;
         }
-        
+
         // Đặt ngay lập tức để ngăn chặn lần gọi thứ hai
         if (isInitializedRef.current) {
             return;
         }
         isInitializedRef.current = true;
-        
+
         const initializeQuiz = async () => {
             try {
                 setLoading(true);
-                
+
                 // Load câu hỏi
                 const questionsData = await getQuestionsByQuizzId(id);
                 setQuestions(questionsData);
-                
+
                 // Kiểm tra tiến trình
                 const checkData = {
                     quizId: id,
                     userId: currentUser.id
                 };
-                
+
                 console.log("Checking progress for:", checkData);
                 const existingResult = await checkProcess(checkData);
                 console.log("Existing result:", existingResult);
-                
-                if (existingResult && existingResult.status ==="PENDING") {
+
+                if (existingResult && existingResult.status === "PENDING") {
                     console.log("Found existing result:", existingResult);
-                    
                     setResult(existingResult);
-                    
+
                     if (existingResult.UserAnswers && existingResult.UserAnswers.length > 0) {
                         setUserAnswers(existingResult.UserAnswers);
-                       
+
+                        // Sửa lỗi mapping questionId
                         const answeredQuestionIds = new Set(
-                            existingResult.UserAnswers.map(answer => answer.question)
+                            existingResult.UserAnswers.map(answer => answer.questionId || answer.question)
                         );
-                        
+
                         let nextUnansweredIndex = questionsData.findIndex(
                             question => !answeredQuestionIds.has(question._id)
                         );
+                        
                         console.log("User answers:", existingResult.UserAnswers);
+                        console.log("Answered question IDs:", Array.from(answeredQuestionIds));
                         console.log("Next unanswered question index:", nextUnansweredIndex);
+                        
                         if (nextUnansweredIndex === -1) {
                             if (existingResult.UserAnswers.length >= questionsData.length) {
                                 const savedScore = existingResult.UserAnswers.reduce(
@@ -94,29 +99,41 @@ const PlayPage = () => {
                                 );
                                 setScore(savedScore);
                                 setQuizComplete(true);
+                                return; // Thoát sớm nếu quiz đã hoàn thành
                             } else {
-                                nextUnansweredIndex = questionsData.length - 1;
+                                nextUnansweredIndex = 0; // Quay về câu đầu tiên thay vì câu cuối
                             }
                         }
-                        
+
                         setCurrentQuestionIndex(nextUnansweredIndex);
-                        
+
                         const savedScore = existingResult.UserAnswers.reduce(
                             (total, answer) => total + (answer.isCorrect ? answer.points || 100 : 0),
                             0
                         );
                         console.log("Saved score:", savedScore);
                         setScore(savedScore);
-                        
+
                         const isCurrentQuestionAnswered = existingResult.UserAnswers.some(
-                            answer => answer.questionId === questionsData[nextUnansweredIndex]?._id
+                            answer => (answer.questionId || answer.question) === questionsData[nextUnansweredIndex]?._id
                         );
-                        
+
                         // Đánh dấu đã trả lời cho câu hỏi hiện tại nếu câu đã có câu trả lời
                         setAnswered(isCurrentQuestionAnswered);
-                        
-                        // Đặt isLocked = true để không thể thay đổi câu trả lời đã có
-                        setDisableAnswerChange(true);
+                        setDisableAnswerChange(isCurrentQuestionAnswered);
+
+                        // Nếu câu hỏi hiện tại đã được trả lời, hiển thị đáp án
+                        if (isCurrentQuestionAnswered) {
+                            const existingAnswer = existingResult.UserAnswers.find(
+                                answer => (answer.questionId || answer.question) === questionsData[nextUnansweredIndex]?._id
+                            );
+                            setSelectedAnswer(existingAnswer?.selectedOption);
+                            setShowResult(true);
+                            setAnswerFeedback({
+                                isCorrect: existingAnswer?.isCorrect,
+                                points: existingAnswer?.points || 100
+                            });
+                        }
                     }
                 } else {
                     console.log("Creating new result");
@@ -126,7 +143,7 @@ const PlayPage = () => {
                     });
                     setResult(newResult);
                 }
-                
+
                 setIsInitialized(true);
             } catch (error) {
                 console.error("Error initializing quiz:", error);
@@ -137,9 +154,9 @@ const PlayPage = () => {
                 setLoading(false);
             }
         };
-        
+
         initializeQuiz();
-        
+
         // Cleanup function
         return () => {
             if (autoSaveTimerRef.current) {
@@ -147,48 +164,58 @@ const PlayPage = () => {
             }
         };
     }, [id, currentUser, navigate]);
-    
+
     useEffect(() => {
         if (!isInitialized || !result) return;
-        
+
         autoSaveTimerRef.current = setInterval(() => {
             saveAnswers();
-        }, 10000); 
-        
+        }, 10000);
+
         return () => {
             if (autoSaveTimerRef.current) {
                 clearInterval(autoSaveTimerRef.current);
             }
         };
     }, [isInitialized, result]);
+
     
-    // 3. Hàm lưu câu trả lời - Chỉnh sửa để chỉ lưu câu trả lời mới
     const saveAnswers = async (forceComplete = false) => {
         if (!result || !result._id) {
             console.log("No result to save to");
-            return;
+            return false;
         }
-        
+
         // Chỉ lưu khi có câu trả lời mới
         if (pendingAnswers.length === 0 && !forceComplete) {
             console.log("No pending answers to save");
-            return;
+            return true; // Return true vì không có lỗi
         }
-        
+
         try {
             console.log("Saving pending answers:", pendingAnswers);
-            
+
             // Chỉ gửi những câu trả lời mới lên server
-            await addAnswerToResult({
+            const saveResult = await addAnswerToResult({
                 resultId: result._id,
                 answers: pendingAnswers,
                 completed: forceComplete
             });
-            
+
+            console.log("Save result:", saveResult);
+
             // Cập nhật state sau khi lưu thành công
-            setUserAnswers(prev => [...prev, ...pendingAnswers]);
-            setPendingAnswers([]);
-            
+            if (pendingAnswers.length > 0) {
+                setUserAnswers(prev => {
+                    const newUserAnswers = [...prev, ...pendingAnswers];
+                    console.log("Updated userAnswers:", newUserAnswers);
+                    return newUserAnswers;
+                });
+                
+                // Clear pending answers sau khi lưu
+                setPendingAnswers([]);
+            }
+
             if (forceComplete) {
                 // Đánh dấu hoàn thành bài quiz
                 await completeResult({
@@ -197,115 +224,130 @@ const PlayPage = () => {
                     accuracy: (score / (questions.length * 100)) * 100
                 });
             }
-            
+
+            console.log("Save completed successfully");
             return true;
         } catch (error) {
             console.error("Error saving answers:", error);
+            showError("Không thể lưu câu trả lời. Vui lòng thử lại!");
             return false;
         }
     };
     
+const handleAnswerSelect = (answer) => {
+    // Kiểm tra xem câu hỏi đã được trả lời chưa
+    const isQuestionAnswered = userAnswers.some(
+        a => a.questionId === questions[currentQuestionIndex]?._id
+    );
+    
+    if (isQuestionAnswered && disableAnswerChange) {
+        showError("Câu hỏi này đã được trả lời, không thể thay đổi!");
+        return;
+    }
+    
+    const currentQuestion = questions[currentQuestionIndex];
+    console.log("Answer selected:", answer, "Question type:", currentQuestion.type);
+    
+    // Xử lý theo loại câu hỏi
+    if (currentQuestion.type === 'MULTIPLE_ANSWER') {
+        // Cho phép chọn nhiều đáp án - answer đã là array từ QuestionGame
+        setSelectedAnswer(answer);
+    } else {
+        // Chỉ cho phép chọn một đáp án
+        setSelectedAnswer(answer);
+    }
+    
+    setShowResult(false);
+    setAnswerFeedback(null);
+    setAnswered(false);
+};
+
+    // Sửa lại hàm handleCheckAnswer để xử lý multiple answers
+const handleCheckAnswer = async () => {
+    if (!selectedAnswer || (Array.isArray(selectedAnswer) && selectedAnswer.length === 0)) {
+        showError("Please select an answer first!");
+        return;
+    }
+
+    const currentQuestion = questions[currentQuestionIndex];
+
+    try {
+       
+
+        const checkResult = await checkAnswer({
+            questionId: currentQuestion._id,
+            answer: selectedAnswer,
+        });
+
+        console.log("Check result:", checkResult);
+
+        setAnswerFeedback(checkResult);
+        setShowResult(true);
+
+        // Update score if correct
+        if (checkResult.isCorrect) {
+            setScore(prev => prev + (checkResult.score || 100));
+        }
+
+        // Add to pending answers
+        const newAnswer = {
+            questionId: currentQuestion._id,
+            selectedOption: selectedAnswer,
+            isCorrect: checkResult.isCorrect,
+            points: checkResult.points || 100,
+            timeTaken: 0
+        };
+
+        setPendingAnswers(prev => [...prev, newAnswer]);
+        setAnswered(true);
+
+    } catch (error) {
+        console.error("Error checking answer:", error);
+        showError("Error checking answer. Please try again.");
+    }
+};
     // 4. Đếm ngược trước khi bắt đầu
     useEffect(() => {
         if (loading || quizComplete) return;
-        
+
         if (countdown > 0 && showCountdown) {
             const timer = setTimeout(() => {
                 setCountdown(prev => prev - 1);
             }, 500);
-            
+
             return () => clearTimeout(timer);
         } else if (countdown === 0 && showCountdown) {
             setTimeout(() => {
                 setShowCountdown(false);
-            }, 500); 
+            }, 500);
         }
     }, [countdown, showCountdown, loading, quizComplete]);
-    
+
     // 5. Xử lý khi người dùng trả lời câu hỏi
-    const handleAnswer = (answer, isCorrect, points = 100) => {
-        const currentQuestion = questions[currentQuestionIndex];
-        if (!currentQuestion) return;
-        
-        // Kiểm tra xem câu hỏi này đã có câu trả lời trong userAnswers chưa
-        const existingAnswerIndex = userAnswers.findIndex(
-            a => a.questionId === currentQuestion._id
-        );
-        
-        // Nếu câu hỏi đã được trả lời và đã được lưu, không cho phép thay đổi
-        if (existingAnswerIndex !== -1 && disableAnswerChange) {
-            showError("Câu hỏi này đã được trả lời, không thể thay đổi!");
-            return;
-        }
-        
-        // Tạo đối tượng câu trả lời
-        const newAnswer = {
-            questionId: currentQuestion._id,
-            selectedOption: answer,
-            isCorrect: isCorrect,
-            points: points,
-            timeTaken: 0 
-        };
-        
-        // Cập nhật điểm số
-        if (existingAnswerIndex !== -1) {
-            // Câu hỏi đã có trong userAnswers nhưng chưa được lưu
-            const oldAnswer = userAnswers[existingAnswerIndex];
-            
-            // Cập nhật điểm số
-            if (oldAnswer.isCorrect && !isCorrect) {
-                // Nếu trước đúng giờ sai, trừ điểm
-                setScore(prev => prev - oldAnswer.points);
-            } else if (!oldAnswer.isCorrect && isCorrect) {
-                // Nếu trước sai giờ đúng, cộng điểm
-                setScore(prev => prev + points);
-            }
-            
-            // Cập nhật userAnswers
-            const updatedAnswers = [...userAnswers];
-            updatedAnswers[existingAnswerIndex] = newAnswer;
-            setUserAnswers(updatedAnswers);
-        } else {
-            // Nếu là câu trả lời mới
-            if (isCorrect) {
-                setScore(prevScore => prevScore + points);
-            }
-            
-            // Thêm vào pendingAnswers để lưu
-            setPendingAnswers(prev => [...prev, newAnswer]);
-        }
-        
-        // Đánh dấu đã trả lời
-        setAnswered(true);
-        
-        // Lưu câu trả lời ngay lập tức để tránh mất dữ liệu
-        saveAnswers().then(success => {
-            if (success) {
-                // Sau khi lưu thành công, tự động chuyển sang câu tiếp theo sau 1.5 giây
-                setTimeout(() => {
-                    // Nếu còn câu hỏi tiếp theo
-                    if (currentQuestionIndex < questions.length - 1) {
-                        handleNextQuestion();
-                    } else {
-                        // Nếu là câu cuối cùng
-                        handleFinishQuiz();
-                    }
-                }, 1500);
-            }
-        });
-    };
     
+
     // 6. Xử lý khi chuyển câu hỏi
     const handleNextQuestion = async () => {
-        // Lưu câu trả lời khi chuyển câu hỏi
-        await saveAnswers();
-        
+        // Lưu câu trả lời hiện tại trước khi chuyển câu
+        const saveSuccess = await saveAnswers();
+        if (!saveSuccess) {
+            showError("Không thể lưu câu trả lời. Vui lòng thử lại!");
+            return;
+        }
+
+        // Reset UI state AFTER saving
+        setSelectedAnswer(null);
+        setShowResult(false);
+        setAnswerFeedback(null);
+        setAnswered(false);
+
         if (currentQuestionIndex < questions.length - 1) {
-            // Tạo danh sách các ID câu hỏi đã trả lời
+            // Sử dụng userAnswers đã được cập nhật (không cần pendingAnswers nữa vì đã save)
             const answeredIds = new Set(userAnswers.map(a => a.questionId));
+            
             let nextIndex = currentQuestionIndex + 1;
             let foundUnanswered = false;
-            
+
             // Tìm câu tiếp theo chưa trả lời
             while (nextIndex < questions.length) {
                 if (!answeredIds.has(questions[nextIndex]._id)) {
@@ -314,36 +356,54 @@ const PlayPage = () => {
                 }
                 nextIndex++;
             }
-            
+
             // Nếu không tìm thấy câu nào chưa trả lời từ vị trí hiện tại đến cuối
             // thì hiển thị câu tiếp theo như bình thường
             if (!foundUnanswered) {
                 nextIndex = currentQuestionIndex + 1;
             }
-            
+
             // Cập nhật vị trí câu hỏi
             setCurrentQuestionIndex(nextIndex);
-            
+
             // Kiểm tra xem câu tiếp theo đã được trả lời chưa
             const isNextQuestionAnswered = userAnswers.some(
                 answer => answer.questionId === questions[nextIndex]._id
             );
-            
+
             // Cập nhật trạng thái
-            setAnswered(isNextQuestionAnswered);
             setDisableAnswerChange(isNextQuestionAnswered);
-            
+
+            // Nếu câu hỏi đã được trả lời, hiển thị đáp án
+            if (isNextQuestionAnswered) {
+                const existingAnswer = userAnswers.find(
+                    a => a.questionId === questions[nextIndex]._id
+                );
+                setSelectedAnswer(existingAnswer?.selectedOption);
+                setShowResult(true);
+                setAnswered(true);
+                // Tạo answerFeedback giả để hiển thị kết quả
+                setAnswerFeedback({
+                    isCorrect: existingAnswer?.isCorrect,
+                    points: existingAnswer?.points || 100
+                });
+            }
+
         } else {
             // Khi hoàn thành bài quiz
-            await saveAnswers(true); // Lưu và đánh dấu hoàn thành
-            setQuizComplete(true);
+            const finalSaveSuccess = await saveAnswers(true);
+            if (finalSaveSuccess) {
+                setQuizComplete(true);
+            } else {
+                showError("Có lỗi khi hoàn thành bài quiz. Vui lòng thử lại!");
+            }
         }
     };
-    
+
     // Hàm để chuyển đến câu chưa trả lời
     const goToUnansweredQuestion = () => {
         const answeredIds = new Set(userAnswers.map(a => a.questionId));
-        
+
         // Tìm từ vị trí hiện tại đến cuối
         for (let i = currentQuestionIndex + 1; i < questions.length; i++) {
             if (!answeredIds.has(questions[i]._id)) {
@@ -353,7 +413,7 @@ const PlayPage = () => {
                 return true;
             }
         }
-        
+
         // Tìm từ đầu đến vị trí hiện tại
         for (let i = 0; i < currentQuestionIndex; i++) {
             if (!answeredIds.has(questions[i]._id)) {
@@ -363,11 +423,11 @@ const PlayPage = () => {
                 return true;
             }
         }
-        
+
         // Không tìm thấy câu nào chưa trả lời
         return false;
     };
-    
+
     // 7. Xử lý hoàn thành quiz
     const handleFinishQuiz = async () => {
         try {
@@ -415,18 +475,18 @@ const PlayPage = () => {
             setQuizComplete(true);
         }
     };
-    
+
     // 8. Xử lý làm lại quiz
     const restartQuiz = async () => {
         try {
             setLoading(true);
-            
+
             // Tạo bản ghi kết quả mới
             const newResult = await initialResult({
                 quizId: id,
                 userId: currentUser.id
             });
-            
+
             // Reset tất cả state
             setResult(newResult);
             setUserAnswers([]);
@@ -445,12 +505,12 @@ const PlayPage = () => {
             setLoading(false);
         }
     };
-    
+
     // Modernized Countdown Overlay
     const CountdownOverlay = () => (
-        <div 
+        <div
             className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
-            style={{ 
+            style={{
                 background: 'rgba(0, 0, 0, 0.85)',
                 zIndex: 1050,
                 backdropFilter: 'blur(5px)'
@@ -468,11 +528,11 @@ const PlayPage = () => {
                     {countdown > 0 ? (
                         <div className="d-flex flex-column align-items-center">
                             <div className="position-relative">
-                                <motion.div 
+                                <motion.div
                                     className="position-absolute top-50 start-50 translate-middle"
-                                    style={{ 
-                                        width: '150px', 
-                                        height: '150px', 
+                                    style={{
+                                        width: '150px',
+                                        height: '150px',
                                         borderRadius: '50%',
                                         border: '4px solid rgba(255,255,255,0.2)'
                                     }}
@@ -490,7 +550,7 @@ const PlayPage = () => {
                             <p className="text-white fs-4 mt-4 fw-light">Get Ready!</p>
                         </div>
                     ) : (
-                        <motion.div 
+                        <motion.div
                             className="d-flex flex-column align-items-center"
                             animate={{ scale: [1, 1.2, 1] }}
                             transition={{ duration: 0.5 }}
@@ -503,7 +563,7 @@ const PlayPage = () => {
             </AnimatePresence>
         </div>
     );
-    
+
     // Enhanced Quiz Complete Screen
     if (quizComplete) {
         return (
@@ -556,10 +616,10 @@ const PlayPage = () => {
 
                                         <div className="mt-4">
                                             <h6 className="mb-2">Your Performance</h6>
-                                            <ProgressBar 
-                                                now={(score / (questions.length * 100)) * 100} 
-                                                variant="success" 
-                                                className="mb-4" 
+                                            <ProgressBar
+                                                now={(score / (questions.length * 100)) * 100}
+                                                variant="success"
+                                                className="mb-4"
                                                 style={{ height: "12px", borderRadius: "6px" }}
                                             />
                                         </div>
@@ -567,19 +627,19 @@ const PlayPage = () => {
                                 </Card>
 
                                 <div className="d-flex flex-column flex-md-row justify-content-center gap-3 mt-4">
-                                    <Button 
-                                        variant="primary" 
-                                        size="lg" 
-                                        onClick={restartQuiz} 
+                                    <Button
+                                        variant="primary"
+                                        size="lg"
+                                        onClick={restartQuiz}
                                         className="px-4 py-3 fw-medium"
                                     >
                                         <FiFlag className="me-2" />
                                         Play Again
                                     </Button>
-                                    <Button 
-                                        variant="outline-secondary" 
-                                        size="lg" 
-                                        onClick={() => navigate(`/quiz-detail/${id}`)} 
+                                    <Button
+                                        variant="outline-secondary"
+                                        size="lg"
+                                        onClick={() => navigate(`/quiz-detail/${id}`)}
                                         className="px-4 py-3 fw-medium"
                                     >
                                         Back to Quiz Details
@@ -601,13 +661,13 @@ const PlayPage = () => {
     return (
         <>
             {showCountdown && <CountdownOverlay />}
-            
+
             <div className="min-vh-100" style={{
                 background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)',
                 backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")',
                 backgroundAttachment: 'fixed'
             }}>
-                <NavBar/>
+                <NavBar />
                 <Container className="py-4">
                     <Row className="justify-content-center">
                         <Col lg={10}>
@@ -631,14 +691,14 @@ const PlayPage = () => {
                                                     <FiCheckCircle className="me-1" />
                                                     <span>{userAnswers.length} / {questions.length} Answered</span>
                                                 </Badge>
-                                                <Button 
-                                                    variant="outline-info" 
-                                                    size="sm" 
+                                                <Button
+                                                    variant="outline-info"
+                                                    size="sm"
                                                     className="d-flex align-items-center justify-content-center"
                                                     onClick={() => {
                                                         if (!goToUnansweredQuestion()) {
                                                             showError("Tất cả câu hỏi đã được trả lời!");
-                                                            
+
                                                             if (userAnswers.length >= questions.length) {
                                                                 handleFinishQuiz();
                                                             }
@@ -650,10 +710,10 @@ const PlayPage = () => {
                                                 </Button>
                                             </div>
                                         </div>
-                                        
-                                        <ProgressBar 
-                                            now={((currentQuestionIndex + 1) / questions.length) * 100} 
-                                            variant="primary" 
+
+                                        <ProgressBar
+                                            now={((currentQuestionIndex + 1) / questions.length) * 100}
+                                            variant="primary"
                                             className="mb-0"
                                             style={{ height: "8px", borderRadius: "4px" }}
                                         />
@@ -671,9 +731,9 @@ const PlayPage = () => {
                                             <i className="fas fa-lock me-2"></i>
                                             <div>
                                                 <span>This question has already been answered and cannot be changed.</span>
-                                                <Button 
-                                                    variant="link" 
-                                                    className="p-0 ms-2 fw-medium" 
+                                                <Button
+                                                    variant="link"
+                                                    className="p-0 ms-2 fw-medium"
                                                     onClick={goToUnansweredQuestion}
                                                 >
                                                     Go to unanswered questions
@@ -682,7 +742,7 @@ const PlayPage = () => {
                                         </div>
                                     </motion.div>
                                 )}
-                                
+
                                 {/* Question Card */}
                                 <Card className="border-0 shadow-lg mb-4 quiz-question-card">
                                     <Card.Body className="p-4 p-lg-5">
@@ -692,20 +752,23 @@ const PlayPage = () => {
                                                     <Badge bg="primary" className="py-2 px-3 rounded-pill fw-medium">
                                                         Question {currentQuestionIndex + 1} of {questions.length}
                                                     </Badge>
-                                                    <Badge 
-                                                        bg={userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) ? 
-                                                            "success" : "warning"} 
+                                                    <Badge
+                                                        bg={userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) ?
+                                                            "success" : "warning"}
                                                         className="py-2 px-3 rounded-pill fw-medium"
                                                     >
-                                                        {userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) ? 
+                                                        {userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) ?
                                                             "Answered" : "Not answered"}
                                                     </Badge>
                                                 </div>
-                                                <QuestionGame 
-                                                    question={questions[currentQuestionIndex]} 
+                                                <QuestionGame
+                                                    question={questions[currentQuestionIndex]}
                                                     questionNumber={currentQuestionIndex + 1}
                                                     totalQuestions={questions.length}
-                                                    onAnswer={handleAnswer}
+                                                    onAnswerSelect={handleAnswerSelect} // Thay đổi từ onAnswer thành onAnswerSelect
+                                                    selectedAnswer={selectedAnswer}
+                                                    showResult={showResult}
+                                                    answerFeedback={answerFeedback}
                                                     defaultAnswer={userAnswers.find(a => a.questionId === questions[currentQuestionIndex]?._id)?.selectedOption}
                                                     isLocked={userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id) && disableAnswerChange}
                                                 />
@@ -713,9 +776,9 @@ const PlayPage = () => {
                                         )}
                                     </Card.Body>
                                 </Card>
-                                
+
                                 {/* Quiz Navigation Footer */}
-                                <Card className="border-0 shadow-lg" style={{borderRadius: '12px'}}>
+                                <Card className="border-0 shadow-lg" style={{ borderRadius: '12px' }}>
                                     <Card.Body className="p-4">
                                         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
                                             <div className="mb-3 mb-md-0">
@@ -729,12 +792,12 @@ const PlayPage = () => {
                                                     Current Score: <span className="ms-2 text-primary fw-bold">{score}</span>
                                                 </h5>
                                                 <div className="d-flex align-items-center">
-                                                    <div className="flex-grow-1 me-2 position-relative" style={{height: '10px'}}>
-                                                        <div className="position-absolute w-100 bg-light" style={{height: '10px', borderRadius: '5px'}}></div>
-                                                        <motion.div 
-                                                            className="position-absolute bg-success" 
+                                                    <div className="flex-grow-1 me-2 position-relative" style={{ height: '10px' }}>
+                                                        <div className="position-absolute w-100 bg-light" style={{ height: '10px', borderRadius: '5px' }}></div>
+                                                        <motion.div
+                                                            className="position-absolute bg-success"
                                                             style={{
-                                                                height: '10px', 
+                                                                height: '10px',
                                                                 borderRadius: '5px',
                                                                 width: `${Math.round((score / (questions.length * 100)) * 100)}%`
                                                             }}
@@ -749,40 +812,54 @@ const PlayPage = () => {
                                                 </div>
                                             </div>
                                             <div>
-                                                {currentQuestionIndex < questions.length - 1 ? (
-                                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                        <Button 
-                                                            variant="primary" 
-                                                            size="lg" 
-                                                            onClick={handleNextQuestion}
-                                                            disabled={!answered && !userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id)}
-                                                            className="px-4 d-flex align-items-center shadow"
-                                                            style={{borderRadius: '10px'}}
-                                                        >
-                                                            Next Question
-                                                            <motion.div
-                                                                animate={{ x: [0, 5, 0] }}
-                                                                transition={{ duration: 1.5, repeat: Infinity }}
+
+                                                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                                                    <div className="mb-3 mb-md-0">
+                                                        {/* Score display remains the same */}
+                                                    </div>
+                                                    <div className="d-flex gap-2">
+                                                        {!showResult && !answered && (
+                                                            <Button
+                                                                variant="warning"
+                                                                size="lg"
+                                                                onClick={handleCheckAnswer}
+                                                                disabled={
+                                                                    !selectedAnswer || 
+                                                                    (Array.isArray(selectedAnswer) && selectedAnswer.length === 0)
+                                                                }
+                                                                className="px-4"
                                                             >
-                                                                <FiChevronRight className="ms-2" size={22} />
-                                                            </motion.div>
-                                                        </Button>
-                                                    </motion.div>
-                                                ) : (
-                                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                        <Button 
-                                                            variant="success" 
-                                                            size="lg" 
-                                                            onClick={handleFinishQuiz}
-                                                            disabled={!answered && !userAnswers.some(a => a.questionId === questions[currentQuestionIndex]?._id)}
-                                                            className="px-4 d-flex align-items-center shadow"
-                                                            style={{borderRadius: '10px'}}
-                                                        >
-                                                            Finish Quiz
-                                                            <FiFlag className="ms-2" size={22} />
-                                                        </Button>
-                                                    </motion.div>
-                                                )}
+                                                                <FiCheckCircle className="me-2" />
+                                                                Check Answer
+                                                            </Button>
+                                                        )}
+
+                                                        {(showResult || answered) && (
+                                                            currentQuestionIndex < questions.length - 1 ? (
+                                                                <Button
+                                                                    variant="primary"
+                                                                    size="lg"
+                                                                    onClick={handleNextQuestion}
+                                                                    className="px-4"
+                                                                >
+                                                                    Next Question
+                                                                    <FiChevronRight className="ms-2" />
+                                                                </Button>
+                                                            ) : (
+                                                                <Button
+                                                                    variant="success"
+                                                                    size="lg"
+                                                                    onClick={handleFinishQuiz}
+                                                                    className="px-4"
+                                                                >
+                                                                    Finish Quiz
+                                                                    <FiFlag className="ms-2" />
+                                                                </Button>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
+
                                             </div>
                                         </div>
                                     </Card.Body>
