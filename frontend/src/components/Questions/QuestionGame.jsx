@@ -4,8 +4,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/QuestionGame.css";
 import CreateLoading from "../common/CreateLoading";
-import DOMPurify from 'dompurify'; // For sanitizing HTML content
-import { FiCheck, FiX } from 'react-icons/fi';
+import DOMPurify from 'dompurify';
+import { FiCheck, FiX, FiCheckCircle } from 'react-icons/fi';
 import ConfidenceDecorator from "../../decorators/ConfidenceDecorator";
 import ComboProgressBar from "../../decorators/ComboProgressBar";
 import { useComboDecorator } from "../../decorators/useComboDecorator";
@@ -13,21 +13,15 @@ import MotivationalDecorator from "../../decorators/MotivationalDecorator";
 import PowerUpDecorator from "../../decorators/PowerUpDecorator";
 import "../../decorators/ConfidenceDecorator.css";
 import "../../decorators/MotivationalDecorator.css";
-const QuestionGame = ({
-  question,
-  questionNumber,
-  totalQuestions,
-  onAnswer,
-import { FiCheck, FiX, FiCheckCircle } from 'react-icons/fi';
 
 const QuestionGame = ({ 
   question, 
   questionNumber, 
   totalQuestions, 
-  onAnswerSelect, // Thay đổi từ onAnswer thành onAnswerSelect
-  selectedAnswer: propSelectedAnswer, // Nhận selectedAnswer từ parent
-  showResult, // Nhận showResult từ parent
-  answerFeedback, // Nhận answerFeedback từ parent
+  onAnswerSelect,
+  selectedAnswer: propSelectedAnswer,
+  showResult,
+  answerFeedback,
   defaultAnswer = null,
   isLocked
 }) => {
@@ -43,11 +37,13 @@ const QuestionGame = ({
   // State for text questions
   const [textAnswer, setTextAnswer] = useState('');
   const textInputRef = useRef(null);
+  
   // State cho ConfidenceDecorator
   const [multiplier, setMultiplier] = useState(1);
 
   // Combo hook
   const { combo, comboBonus, answer: comboAnswer } = useComboDecorator();
+  
   // Animation states
   const [questionVisible, setQuestionVisible] = useState(false);
   const [answersVisible, setAnswersVisible] = useState(
@@ -66,13 +62,8 @@ const QuestionGame = ({
       setIsMobile(window.innerWidth < 768);
     };
 
-    // Check initially
     checkIsMobile();
-
-    // Add event listener
     window.addEventListener('resize', checkIsMobile);
-
-    // Cleanup
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
@@ -88,14 +79,11 @@ const QuestionGame = ({
 
     // Set default answer if provided
     if (defaultAnswer) {
-      // For text questions
       if (questionData.type === 'text') {
         setTextAnswer(defaultAnswer);
         setAnswered(true);
       } else {
-        // For multiple choice questions
         if (questionData.type === 'MULTIPLE_ANSWER' && Array.isArray(defaultAnswer)) {
-          // Multiple answer: tìm các index của options được chọn
           const defaultIndices = defaultAnswer.map(answer =>
             questionData.options?.findIndex(opt => opt.option === answer)
           ).filter(index => index !== -1);
@@ -105,7 +93,6 @@ const QuestionGame = ({
             setAnswered(true);
           }
         } else if (questionData.type !== 'MULTIPLE_ANSWER') {
-          // Single answer: tìm index của option được chọn
           const defaultIndex = questionData.options?.findIndex(
             opt => opt.option === defaultAnswer
           );
@@ -113,8 +100,6 @@ const QuestionGame = ({
           if (defaultIndex !== -1) {
             setSelectedAnswer(defaultIndex);
             setAnswered(true);
-  
-            // Check if answer is correct and update feedback
             const isCorrect = questionData.options[defaultIndex].isCorrect;
             setFeedback({
               visible: true,
@@ -124,7 +109,6 @@ const QuestionGame = ({
         }
       }
     } else {
-      // No default answer, reset states
       setSelectedAnswer(null);
       setAnswered(false);
       setTextAnswer('');
@@ -133,37 +117,29 @@ const QuestionGame = ({
     // Animation timers
     const questionTimer = setTimeout(() => setQuestionVisible(true), 400);
 
-    // Staggered answer appearance
     if (questionData.options && questionData.options.length > 0) {
       questionData.options.forEach((_, index) => {
-        const timer = setTimeout(() => {
+        setTimeout(() => {
           setAnswersVisible(prev => {
             const newArr = [...prev];
             newArr[index] = true;
             return newArr;
           });
         }, 900 + index * 250);
-
-        // Clean up this timer too
-        return () => clearTimeout(timer);
       });
     }
 
-    // Reveal media after answers
     const mediaTimer = setTimeout(() => setMediaVisible(true), 2200);
 
-    // Focus on text input if it's a text question type
     if (questionData.type === 'text' && textInputRef.current) {
       setTimeout(() => {
         textInputRef.current.focus();
       }, 1500);
     }
 
-    // Reset 50:50 and timeLeft when question changes
     setFiftyFiftyIndexes([]);
     setTimeLeft(30);
 
-    // Cleanup timers on unmount
     return () => {
       clearTimeout(questionTimer);
       clearTimeout(mediaTimer);
@@ -178,72 +154,43 @@ const QuestionGame = ({
 
   // Handle answer selection for multiple choice
   const handleAnswerClick = (index) => {
-    if (answered) return; // Prevent selecting another answer after first selection
+    if (answered || isLocked) return;
     
-    setSelectedAnswer(index);
-    setAnswered(true);
-    
-    // Check if answer is correct
-    const isCorrect = questionData?.options?.[index]?.isCorrect || false;
     const selectedOption = questionData?.options?.[index]?.option || '';
-
-    // Calculate points - you could make this more complex
-    const earnedPoints = isCorrect ? points * multiplier + comboBonus : 0;
-    comboAnswer(isCorrect); // cập nhật combo
-    // Show feedback
-    setFeedback({
-      visible: true,
-      correct: isCorrect
-    });
-
-    // Notify parent component about answer and score
-    onAnswer(selectedOption, isCorrect, earnedPoints);
-  };
     
-    // Kiểm tra loại câu hỏi
     if (questionData.type === 'MULTIPLE_ANSWER') {
-        // Cho phép chọn nhiều đáp án
-        setSelectedAnswer(prev => {
-            if (!prev || !Array.isArray(prev)) {
-                // Tạo mảng mới với index được chọn
-                const newSelection = [index];
-                // Gửi array các options được chọn lên parent
-                const newSelectedOptions = [selectedOption];
-                onAnswerSelect(newSelectedOptions);
-                return newSelection;
-            }
-            
-            // Toggle selection
-            let newSelection;
-            if (prev.includes(index)) {
-                newSelection = prev.filter(i => i !== index);
-            } else {
-                newSelection = [...prev, index];
-            }
-            
-            // Gửi array các options được chọn lên parent
-            const newSelectedOptions = newSelection.map(i => questionData.options[i]?.option).filter(Boolean);
-            onAnswerSelect(newSelectedOptions);
-            
-            return newSelection;
-        });
+      setSelectedAnswer(prev => {
+        if (!prev || !Array.isArray(prev)) {
+          const newSelection = [index];
+          const newSelectedOptions = [selectedOption];
+          onAnswerSelect(newSelectedOptions);
+          return newSelection;
+        }
+        
+        let newSelection;
+        if (prev.includes(index)) {
+          newSelection = prev.filter(i => i !== index);
+        } else {
+          newSelection = [...prev, index];
+        }
+        
+        const newSelectedOptions = newSelection.map(i => questionData.options[i]?.option).filter(Boolean);
+        onAnswerSelect(newSelectedOptions);
+        
+        return newSelection;
+      });
     } else {
-        // Chỉ cho phép chọn một đáp án
-        setSelectedAnswer(index);
-        onAnswerSelect(selectedOption);
+      setSelectedAnswer(index);
+      onAnswerSelect(selectedOption);
     }
-};
+  };
 
   // Handle text answer submission
   const handleTextSubmit = (e) => {
     e.preventDefault();
     if (answered || !textAnswer.trim() || isLocked) return;
     
-    // Chỉ thông báo về lựa chọn, KHÔNG kiểm tra đáp án
     onAnswerSelect(textAnswer);
-    
-    // KHÔNG gọi setAnswered(true) ở đây
-    // KHÔNG hiển thị feedback ở đây
   };
 
   // Sử dụng props từ parent để hiển thị kết quả
@@ -255,16 +202,13 @@ const QuestionGame = ({
             correct: answerFeedback.isCorrect
         });
         
-        // Cập nhật selectedAnswer từ props
         if (propSelectedAnswer && questionData.options) {
             if (questionData.type === 'MULTIPLE_ANSWER' && Array.isArray(propSelectedAnswer)) {
-                // Cho multiple answer, tìm các index của options được chọn
                 const answerIndices = propSelectedAnswer.map(answer => 
                     questionData.options.findIndex(opt => opt.option === answer)
                 ).filter(index => index !== -1);
                 setSelectedAnswer(answerIndices);
             } else if (questionData.type !== 'MULTIPLE_ANSWER') {
-                // Cho single answer
                 const answerIndex = questionData.options.findIndex(
                     opt => opt.option === propSelectedAnswer
                 );
@@ -274,22 +218,18 @@ const QuestionGame = ({
             }
         }
     } else {
-        // KHÔNG reset answered ở đây nếu đã có defaultAnswer
         if (!defaultAnswer) {
             setAnswered(false);
         }
         setFeedback({ visible: false, correct: false });
         
-        // Cập nhật selectedAnswer từ props
         if (propSelectedAnswer && questionData.options) {
             if (questionData.type === 'MULTIPLE_ANSWER' && Array.isArray(propSelectedAnswer)) {
-                // Cho multiple answer
                 const answerIndices = propSelectedAnswer.map(answer => 
                     questionData.options.findIndex(opt => opt.option === answer)
                 ).filter(index => index !== -1);
                 setSelectedAnswer(answerIndices);
             } else if (questionData.type !== 'MULTIPLE_ANSWER') {
-                // Cho single answer
                 const answerIndex = questionData.options.findIndex(
                     opt => opt.option === propSelectedAnswer
                 );
@@ -299,7 +239,7 @@ const QuestionGame = ({
     }
 }, [showResult, answerFeedback, propSelectedAnswer, questionData.options, defaultAnswer, questionData.type]);
 
-  // Animation variants for framer-motion - cải thiện để mượt và chuyên nghiệp hơn
+  // Animation variants
   const questionVariants = {
     hidden: { opacity: 0, y: -30 },
     visible: {
@@ -307,7 +247,7 @@ const QuestionGame = ({
       y: 0,
       transition: {
         duration: 0.7,
-        ease: [0.25, 1, 0.5, 1],  // Smooth easing
+        ease: [0.25, 1, 0.5, 1],
         when: "beforeChildren"
       }
     }
@@ -321,7 +261,7 @@ const QuestionGame = ({
       filter: "blur(0px)",
       transition: {
         duration: 0.6,
-        delay: 0.4 + custom * 0.15,  // Shorter delay between answers
+        delay: 0.4 + custom * 0.15,
         ease: [0.25, 1, 0.5, 1]
       }
     })
@@ -335,18 +275,9 @@ const QuestionGame = ({
       y: 0,
       transition: {
         duration: 0.8,
-        delay: 0.5,  // Appear earlier
-        ease: [0.34, 1.56, 0.64, 1]  // Spring-like effect
+        delay: 0.5,
+        ease: [0.34, 1.56, 0.64, 1]
       }
-    }
-  };
-
-  const feedbackVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: "easeOut" }
     }
   };
 
@@ -363,14 +294,11 @@ const QuestionGame = ({
     }
   };
 
-  // If no question data is provided, show a loading state
   if (!questionData) {
-    return (
-      <CreateLoading />
-    );
+    return <CreateLoading />;
   }
 
-  // Function to render the appropriate media element based on type
+  // Function to render media
   const renderMedia = () => {
     if (!questionData.media) return null;
 
@@ -443,7 +371,6 @@ const QuestionGame = ({
     }
   };
 
-  // Reordering the columns for mobile
   const mediaSection = (
     <motion.div
       initial="hidden"
@@ -456,13 +383,13 @@ const QuestionGame = ({
     </motion.div>
   );
 
-  // Rich Text rendering with sanitization
+  // Rich Text rendering
   const renderRichText = (htmlContent) => {
     const sanitizedHtml = DOMPurify.sanitize(htmlContent);
     return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
   };
 
-  // Sửa lại phần render để hiển thị đúng
+  // Render answer button
   const renderAnswerButton = (option, index) => {
     const isSelected = questionData.type === 'MULTIPLE_ANSWER' 
         ? (Array.isArray(selectedAnswer) && selectedAnswer.includes(index))
@@ -502,14 +429,12 @@ const QuestionGame = ({
             <div className="d-flex align-items-center justify-content-between">
                 <span className="flex-grow-1 text-start">{option.option}</span>
                 <div className="ms-2 d-flex align-items-center">
-                    {/* Hiển thị checkbox cho multiple answer */}
                     {questionData.type === 'MULTIPLE_ANSWER' && (
                         <div className={`me-2 ${isSelected ? 'text-white' : 'text-muted'}`}>
                             {isSelected ? '☑️' : '☐'}
                         </div>
                     )}
                     
-                    {/* Hiển thị kết quả */}
                     {showResult && answerFeedback && (
                         <>
                             {isCorrect && <FiCheckCircle className="text-white" size={20} />}
@@ -526,14 +451,13 @@ const QuestionGame = ({
     <div className="question-game-container py-4">
       <Container>
         <Row className="align-items-start justify-content-between">
-          {/* Media Section - hiển thị trên cùng trên mobile */}
           {isMobile && questionData.media && mediaSection}
 
-          {/* Question and Answers Section */}
           <Col lg={questionData.media ? 7 : 12} className="question-content mb-4">
             <div>Thời gian còn lại: {timeLeft} giây</div>
             <ConfidenceDecorator baseScore={points} onMultiplierChange={setMultiplier} />
             <ComboProgressBar combo={combo} />
+            
             <AnimatePresence>
               {questionVisible && (
                 <motion.div
@@ -549,7 +473,6 @@ const QuestionGame = ({
                     }
                   </h4>
 
-                  {/* Show question description if available */}
                   {answered && questionData.description && (
                     <motion.div
                       className="question-description text-muted mt-3 p-3"
@@ -573,12 +496,12 @@ const QuestionGame = ({
               )}
             </AnimatePresence>
 
-            {/* Multiple Choice Questions - Nâng cấp giao diện */}
+            {/* Multiple Choice Questions */}
             {questionData.type !== 'text' && questionData.options && questionData.options.map((option, index) => (
               !fiftyFiftyIndexes.includes(index) && (
                 <AnimatePresence key={index}>
                   {answersVisible[index] && (
-                    <motion.div
+                    <motion.div 
                       initial="hidden"
                       animate="visible"
                       custom={index}
@@ -587,125 +510,15 @@ const QuestionGame = ({
                       whileHover={!answered ? { scale: 1.02, x: 5 } : {}}
                       transition={{ type: "spring", stiffness: 400 }}
                     >
-                      <Button
-                        variant={!answered
-                          ? "outline-primary"
-                          : (selectedAnswer === index
-                            ? (option.isCorrect ? "success" : "danger")
-                            : option.isCorrect && selectedAnswer !== null
-                              ? "success" : "outline-secondary")}
-                        className={`w-100 py-3 position-relative answer-button ${!answered ? 'answer-button-hover' : ''}`}
-                        onClick={() => !answered && handleAnswerClick(index)}
-                        disabled={answered}
-                        style={{
-                          boxShadow: selectedAnswer === index
-                            ? (option.isCorrect ? "0 0 15px rgba(40, 167, 69, 0.4)" : "0 0 15px rgba(220, 53, 69, 0.4)")
-                            : option.isCorrect && answered ? "0 0 15px rgba(40, 167, 69, 0.4)" : "0 4px 12px rgba(0,0,0,0.08)",
-                          opacity: answered && selectedAnswer !== index && !option.isCorrect ? 0.7 : 1,
-                          borderWidth: "2px",
-                          borderRadius: "12px",
-                          transition: "all 0.3s ease",
-                          textAlign: "left",
-                          paddingLeft: "65px",
-                          fontWeight: "500",
-                          fontSize: "1.1rem",
-                          transform: answered && (selectedAnswer === index || option.isCorrect)
-                            ? "translateY(-3px)"
-                            : "translateY(0)",
-                          marginBottom: "15px",
-                          background: !answered ? "white" : undefined,
-                          minHeight: "60px",
-                          color: "#0d6efd",
-                        }}
-                      >
-                        {/* Answer Letter Label - Nâng cấp thiết kế */}
-                        <div
-                          className="position-absolute d-flex align-items-center justify-content-center"
-                          style={{
-                            left: "10px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            width: "45px",
-                            height: "45px",
-                            borderRadius: "10px",
-                            background: !answered
-                              ? "rgba(13, 110, 253, 0.1)"
-                              : (selectedAnswer === index
-                                ? (option.isCorrect ? "#28a745" : "#dc3545")
-                                : option.isCorrect ? "#28a745" : "rgba(13, 110, 253, 0.1)"),
-                            color: !answered
-                              ? "#0d6efd"
-                              : (option.isCorrect || selectedAnswer === index) ? "#ffffff" : "#0d6efd",
-                            fontWeight: "bold",
-                            fontSize: "1.2rem",
-                            transition: "all 0.3s ease",
-                            boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
-                          }}
-                        >
-                          {String.fromCharCode(65 + index)} {/* A, B, C, D, etc. */}
-                        </div>
-
-                        {/* Option text with rich text support */}
-                        <div className="option-text" style={{ wordBreak: "break-word" }}>
-                          {option.option.includes('<') && option.option.includes('>')
-                            ? renderRichText(option.option)
-                            : option.option
-                          }
-                        </div>
-
-                        {/* Correct/Incorrect Icons - Cải thiện animation */}
-                        {answered && option.isCorrect && (
-                          <motion.div
-                            className="correct-icon position-absolute d-flex align-items-center justify-content-center"
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 500, delay: 0.2 }}
-                            style={{
-                              right: "15px",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              width: "30px",
-                              height: "30px",
-                              borderRadius: "50%",
-                              background: "#28a745",
-                              color: "#fff",
-                              boxShadow: "0 3px 8px rgba(40, 167, 69, 0.4)"
-                            }}
-                          >
-                            <FiCheck size={20} />
-                          </motion.div>
-                        )}
-
-                        {answered && selectedAnswer === index && !option.isCorrect && (
-                          <motion.div
-                            className="incorrect-icon position-absolute d-flex align-items-center justify-content-center"
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 500, delay: 0.2 }}
-                            style={{
-                              right: "15px",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              width: "30px",
-                              height: "30px",
-                              borderRadius: "50%",
-                              background: "#dc3545",
-                              color: "#fff",
-                              boxShadow: "0 3px 8px rgba(220, 53, 69, 0.4)"
-                            }}
-                          >
-                            <FiX size={20} />
-                          </motion.div>
-                        )}
-                      </Button>
+                      {renderAnswerButton(option, index)}
                     </motion.div>
                   )}
                 </AnimatePresence>
               )
             ))}
 
-            {/* Text Input Question - Cải thiện giao diện */}
-            {questionData.type === 'text' && (
+            {/* Text Input Question */}
+            {(questionData.type === 'text' || questionData.type === 'number') && (
               <AnimatePresence>
                 <motion.div
                   initial="hidden"
@@ -789,7 +602,6 @@ const QuestionGame = ({
                       </Button>
                     </motion.div>
 
-                    {/* Show correct answers if wrong */}
                     {answered && !feedback.correct && questionData.options && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -819,80 +631,7 @@ const QuestionGame = ({
               </AnimatePresence>
             )}
 
-            {/* Text Input Question */}
-            {questionData.type === 'text' || questionData.type === 'number' && (
-              <AnimatePresence>
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={textInputVariants}
-                  className="mb-4"
-                >
-                  <Form onSubmit={handleTextSubmit}>
-                    <Form.Group className="mb-3">
-                      <Form.Control
-                        type="text"
-                        placeholder="Type your answer here..."
-                        value={textAnswer}
-                        onChange={(e) => setTextAnswer(e.target.value)}
-                        disabled={answered}
-                        ref={textInputRef}
-                        className="py-3 px-4"
-                        style={{
-                          borderRadius: "12px",
-                          boxShadow: "0 5px 15px rgba(0,0,0,0.08)",
-                          fontSize: "1.1rem",
-                          border: answered
-                            ? (feedback.correct ? "2px solid #28a745" : "2px solid #dc3545")
-                            : "2px solid #dee2e6",
-                          transition: "all 0.3s ease"
-                        }}
-                      />
-                    </Form.Group>
-                    <Button
-                      type="submit"
-                      variant={answered ? (feedback.correct ? "success" : "danger") : "primary"}
-                      className="w-100 py-3"
-                      disabled={answered || !textAnswer.trim()}
-                      style={{
-                        borderRadius: "12px",
-                        fontWeight: "500",
-                        boxShadow: "0 5px 15px rgba(0,0,0,0.08)",
-                        transition: "all 0.3s ease"
-                      }}
-                    >
-                      {answered ? (feedback.correct ? "Correct! ✓" : "Incorrect ✗") : "Submit Answer"}
-                    </Button>
-
-                    {/* Show correct answers if wrong */}
-                    {answered && !feedback.correct && questionData.options && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 0.4 }}
-                        className="mt-3 p-3 rounded"
-                        style={{
-                          background: "rgba(40, 167, 69, 0.1)",
-                          border: "1px solid rgba(40, 167, 69, 0.2)"
-                        }}
-                      >
-                        <p className="mb-1 fw-bold">Correct answer(s):</p>
-                        <ul className="mb-0 ps-3">
-                          {questionData.options
-                            .filter(opt => opt.isCorrect)
-                            .map((opt, i) => (
-                              <li key={i}>{opt.option}</li>
-                            ))
-                          }
-                        </ul>
-                      </motion.div>
-                    )}
-                  </Form>
-                </motion.div>
-              </AnimatePresence>
-            )}
-
-            {/* Feedback message - cải thiện thiết kế và animation */}
+            {/* Feedback message */}
             <AnimatePresence>
               {feedback.visible && questionData.type !== 'text' && (
                 <motion.div
@@ -934,7 +673,7 @@ const QuestionGame = ({
               )}
             </AnimatePresence>
 
-            {/* Progress Bar with animation */}
+            {/* Progress Bar */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
