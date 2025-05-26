@@ -2,11 +2,17 @@ import Question from '../models/Question.js';
 import Result from '../models/Result.js';
 import multer from 'multer';
 import Quizze from '../models/Quizze.js';
+import User from '../models/User.js';
+import Category from '../models/Category.js';
+
+import { SearchByTitleStrategy, SearchByCategoryStrategy, SearchByDifficultyStrategy, SearchByComplexStrategy } from '../Strategy/quizSearchStrategies.js';
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 import {cloudinary} from '../config/cloudinary.js';
 import {generateQuiz} from "../services/generateQuizService.js"
+
 
 export const getAllQuestions = async (req, res) => {
     try {
@@ -45,10 +51,14 @@ export const getDetailById = async (req, res) => {
       const quizze = await Quizze.find({ _id: id }).findOne(); 
       const questionNumber = await Question.countDocuments({ quizId: id });
       const players = await Result.countDocuments({ quiz: id }).populate('user');
+      const author = await User.findById(quizze.createdBy).select('name');
+      const categoryName = await Category.findById(quizze.category).select('name');
       const data = {
           quizze: quizze,
           questionNumber: questionNumber,
-          players: players
+          players: players,
+          author: author ? author.name : 'Unknown Author',
+          categoryName: categoryName ? categoryName.name : 'Uncategorized'
       }
       console.log(data)
 
@@ -182,4 +192,34 @@ export const generateQuizze = async (req, res) => {
             console.error("Error generating quiz:", error);
             res.status(500).json({ message: error.message });
           }
+}
+
+export const searchQuizze = async (req, res) => {
+  const { type, keyword, category, difficulty } = req.query;
+
+  const context = new QuizSearchContext();
+
+  switch(type) {
+    case 'title':
+      context.setStrategy(new SearchByTitleStrategy());
+      break;
+    case 'category':
+      context.setStrategy(new SearchByCategoryStrategy());
+      break;
+    case 'difficulty':
+      context.setStrategy(new SearchByDifficultyStrategy());
+      break;
+    case 'complex':
+      context.setStrategy(new SearchByComplexStrategy());
+      break;
+    default:
+      return res.status(400).json({ error: "Loại tìm kiếm không hợp lệ" });
+  }
+
+  try {
+    const results = await context.executeSearch({ keyword, category, difficulty });
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
