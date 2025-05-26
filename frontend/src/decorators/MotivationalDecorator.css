@@ -1,0 +1,19 @@
+.motivational-msg {
+    margin: 12px 0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    animation: fadeIn 0.7s;
+    font-weight: bold;
+}
+.motivational-msg.correct {
+    background: #e0ffe0;
+    color: #2e7d32;
+}
+.motivational-msg.wrong {
+    background: #fff0f0;
+    color: #c62828;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px);}
+    to { opacity: 1; transform: translateY(0);}
+}

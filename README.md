@@ -59,7 +59,7 @@ AI_API_KEY=your_ai_api_key
 Copy `.env.example` to `.env` and fill in the actual values.
 
 ```bash
-cp backend/.env.example backend/.env
+cp backend/.env backend/.env
 ```
 
 ### 4️⃣ Setup Database  

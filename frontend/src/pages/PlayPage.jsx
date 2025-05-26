@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { checkProcess, initialResult, addAnswerToResult, completeResult, checkAnswer } from '../api/resuiltAPI'
 import { showError, showSuccess } from '../components/common/Notification'
 import { FiClock, FiAward, FiCheckCircle, FiHelpCircle, FiChevronRight, FiFlag } from 'react-icons/fi'
-
+import { quizScoreSubject } from '../patterns/QuizObserver';
 const PlayPage = () => {
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -434,6 +434,41 @@ const handleCheckAnswer = async () => {
             await saveAnswers(true);
             setQuizComplete(true);
             showSuccess("Bài quiz hoàn thành! Xem kết quả của bạn.");
+            
+            // Lưu thông tin quiz đã hoàn thành cho user hiện tại
+            const completedQuizInfo = {
+                quizId: id,
+                userId: currentUser.id,
+                userName: currentUser.name || 'Anonymous',
+                score: score,
+                timestamp: new Date().getTime(),
+                viewed: false // Cờ để kiểm tra xem toast đã hiển thị chưa
+            };
+            
+            // Lưu vào localStorage cho việc hiển thị khi reload
+            localStorage.setItem(`completed_quiz_${id}_${currentUser.id}`, 
+                JSON.stringify(completedQuizInfo));
+            
+            // Notify observers about the new score (Observer Pattern)
+            quizScoreSubject.notify({
+                quizId: id,
+                userId: currentUser.id,
+                userName: currentUser.name || 'Anonymous',
+                userAvatar: currentUser.avatar,
+                score: score,
+                timestamp: new Date()
+            });
+            
+            // Thêm cơ chế truyền thông tin qua localStorage để hoạt động giữa các tab
+            localStorage.setItem('quiz_score_update', JSON.stringify({
+                quizId: id,
+                userId: currentUser.id,
+                userName: currentUser.name || 'Anonymous',
+                userAvatar: currentUser.avatar,
+                score: score,
+                timestamp: new Date().getTime() // Dùng timestamp để dễ parse
+            }));
+            
         } catch (error) {
             console.error("Error finishing quiz:", error);
             showError("Có lỗi khi hoàn thành bài quiz. Kết quả của bạn đã được lưu một phần.");
