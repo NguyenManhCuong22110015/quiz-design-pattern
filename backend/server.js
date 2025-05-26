@@ -20,8 +20,17 @@ import facebook from './authentication/facebook.js';
 import resultRoutes from './routes/resultRoute.js';
 import commentRoutes from './routes/commentRoute.js';
 import chatbotRoutes from './routes/chatbotRoute.js'
+import rateLimit from 'express-rate-limit';
 
-
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 phút
+  max: 5, // tối đa 5 request
+  message: {
+    error: 'Bạn đã gửi quá nhiều yêu cầu, vui lòng thử lại sau.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 dotenv.config(); 
 
 const app = express();
@@ -84,7 +93,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/results', resultRoutes);
 app.use("/api/comments", commentRoutes)
-app.use('/api/chatbot', chatbotRoutes)
+app.use('/api/chatbot', aiLimiter,chatbotRoutes )
 
 server.listen(PORT, '0.0.0.0' ,() => {
     console.log(`Server running on http://localhost:${PORT}`);

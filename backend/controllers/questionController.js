@@ -62,7 +62,8 @@ export const createQuestion = async (req, res) => {
 export const getQuestionsByQuizzId = async (req, res) => {
     try {
         const quizId = req.query.quizId; 
-        console.log(quizId);
+        
+        console.log("quizid :"+ quizId);
         const questions = await Question.find({ quizId: quizId });
         res.json(questions);
     } catch (error) {
@@ -84,3 +85,17 @@ export const updateQuestion = async (req, res) => {
     }
 }
 
+
+export const deleteQuestion = async (req, res) => {
+    try {
+        const quesId = req.query.quesId; 
+        const deletedQuestion = await Question.findByIdAndDelete(quesId);
+        if (!deletedQuestion) {
+            return res.status(404).json({ message: 'Question not found' });
+        }
+        res.json({ message: 'Question deleted successfully' });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}

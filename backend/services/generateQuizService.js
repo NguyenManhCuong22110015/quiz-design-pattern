@@ -1,20 +1,22 @@
 import 'dotenv/config.js'; 
 import {generateQuizGroqToJSON, extractTextFromPDF, generateQuizFromText} from "../config/generateQuiz.js"; 
 import {GoogleGenerativeAI} from "@google/generative-ai"
-import {createQuizFunctionDeclaration, 
+import {introduceWebsiteDeclaration, 
         describeWebsiteDeclaration} from "./functionDeclaration.js";
 import {setQuiz, describeWebsiteInfo} from "./functionCall.js";
 
 
-const genAI = new GoogleGenerativeAI(process.env.API);
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 
   const generativeModel = genAI.getGenerativeModel({
-    model: 'gemini-1.5-pro',
+    model: 'gemini-1.5-flash',
     tools: [
       {
-        functionDeclarations: [createQuizFunctionDeclaration,
-                              describeWebsiteDeclaration
+        functionDeclarations: [
+      //    createQuizFunctionDeclaration,
+          describeWebsiteDeclaration,
+          introduceWebsiteDeclaration,
         ],
       },
     ],
@@ -23,18 +25,22 @@ const genAI = new GoogleGenerativeAI(process.env.API);
   
 
   const functions = {
-    createQuiz: ({ topics, questionTypes, numberOfQuestions, difficulty }) => {
-      return setQuiz(topics, questionTypes, numberOfQuestions, difficulty);
-    },
+    // createQuiz: ({ topics, questionTypes, numberOfQuestions, difficulty }) => {
+    //   return setQuiz(topics, questionTypes, numberOfQuestions, difficulty);
+    // },
     describeWebsite: ({ websiteType, mainFeatures, purpose }) => {
       return describeWebsiteInfo("Quiz online", 
         ["Tạo quiz","Chơi quiz", "Quản lý tài khoản", "Tìm kiếm quiz",  "Tạo Room và chơi quiz trong room"],
         "Toàn bộ người dùng có như cầu", purpose="Giúp người dùng tạo quiz và chơi quiz",);
     },
+    introduceWebsite: () => {
+      return "Xin chào! 👋 Tôi là trợ lý AI tại trang web này. Tôi có thể giúp bạn tạo các bài quiz, luyện tập kiến thức theo chủ đề, hoặc hỗ trợ học tập hiệu quả hơn. Hãy cho tôi biết bạn muốn bắt đầu với chủ đề nào, hoặc tôi có thể gợi ý nếu bạn chưa rõ nhé!";
+    },
   };
   
   export async function generateQuiz(prompt) {
     try {
+      
       const chat = await generativeModel.startChat();
       
       const result = await chat.sendMessage(prompt);
@@ -67,9 +73,13 @@ const genAI = new GoogleGenerativeAI(process.env.API);
 
   export async function initChatBot(prompt) {
     try {
-      const chat = await generativeModel.startChat();
+      console.log("🔹 Tạo quiz từ prompt:", prompt);
+          const systemPrompt = "Bạn là trợ lý thông minh. Khi người dùng hỏi, nếu có function phù hợp, bạn sẽ gọi function đó thay vì trả lời trực tiếp. Nếu không có function phù hợp, hãy hỏi thêm thông tin.";
+
+      const chat = await generativeModel.startChat({ temperature: 0.2, systemMessage: systemPrompt });
       
       const result = await chat.sendMessage(prompt);
+      
 
       const call = result.response.functionCalls()?.[0];
 

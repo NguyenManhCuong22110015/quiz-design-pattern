@@ -6,7 +6,7 @@ import { generateQuiz, generateQuizFromPDF } from '../services/generateQuizServi
 import multer from 'multer';
 import Question from '../models/Question.js';
 import { fetchImage } from '../config/googleSearch.js';
-import { getDetailById, getChallengesQuizzes } from '../controllers/quizzController.js';
+import { getDetailById, getChallengesQuizzes, searchQuizze } from '../controllers/quizzController.js';
 
 const router = Router();
 
@@ -28,6 +28,7 @@ router.get('/getByUserId', async (req, res) => {
 router.get('/getById', async (req, res) => {
   try {
     const { id } = req.query;
+    console.log("Fetching quiz with ID:", id);
 
     const quizze = await Quizze.find({ _id: id }).findOne();
     res.json(quizze);
@@ -326,6 +327,8 @@ router.get("/getTopQuiz", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+router.get("/search", searchQuizze)
 
 
 export default router;

@@ -47,4 +47,6 @@ toJSON: {
 });
 
 
+
+
 export default mongoose.model('Result', userSchema, 'results');

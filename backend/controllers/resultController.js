@@ -1,6 +1,8 @@
 import Result from "../models/Result.js";
+import Question from "../models/Question.js";
 import mongoose from 'mongoose';
 import User from "../models/User.js";
+import { gradeQuestion } from "../services/gradeService.js"; // Assuming you have a utility function to grade questions
 
 export const initializeResult = async (req, res) => {
     try {
@@ -40,19 +42,37 @@ export const checkProcess = async (req, res) => {
         const { userId, quizId } = req.body;
         console.log(userId + "  :  " + quizId);
         const result = await Result.findOne({ user: userId, quiz: quizId, status: 'PENDING' });
+        
         if (result) {
-            res.json(result);
-        }
-        else
-            {
-                res.json(null);
+            // Parse lại answers trước khi gửi về frontend
+            if (result.UserAnswers && result.UserAnswers.length > 0) {
+                result.UserAnswers = result.UserAnswers.map(ans => {
+                    let parsedAnswer;
+                    try {
+                        // Thử parse JSON, nếu thành công thì là array
+                        parsedAnswer = JSON.parse(ans.answer);
+                    } catch (e) {
+                        // Nếu không parse được thì là string
+                        parsedAnswer = ans.answer;
+                    }
+                    
+                    return {
+                        ...ans.toObject(),
+                        selectedOption: parsedAnswer,
+                        questionId: ans.question
+                    };
+                });
             }
+            
+            res.json(result);
+        } else {
+            res.json(null);
+        }
 
-    }
-    catch (error) {
+    } catch (error) {
         res.status(500).json({ message: error.message });
     }
-};    
+};   
 
 export const addAnswerToResult = async (req, res) => {
     try {
@@ -82,6 +102,23 @@ export const addAnswerToResult = async (req, res) => {
         for (const newAnswer of answers) {
             const questionId = newAnswer.questionId.toString();
             
+            // Xử lý selectedOption - convert array thành string nếu cần
+            let processedAnswer;
+            if (Array.isArray(newAnswer.selectedOption)) {
+                // Cho MULTIPLE_ANSWER, convert array thành JSON string
+                processedAnswer = JSON.stringify(newAnswer.selectedOption);
+            } else {
+                // Cho single answer, giữ nguyên string
+                processedAnswer = newAnswer.selectedOption;
+            }
+            
+            console.log("Processing answer:", {
+                questionId,
+                originalAnswer: newAnswer.selectedOption,
+                processedAnswer,
+                isArray: Array.isArray(newAnswer.selectedOption)
+            });
+            
             // Kiểm tra xem câu trả lời đã tồn tại chưa
             if (existingAnswersMap[questionId]) {
                 // Nếu đã tồn tại, cập nhật câu trả lời
@@ -92,7 +129,7 @@ export const addAnswerToResult = async (req, res) => {
                 if (index !== -1) {
                     updatedAnswers[index] = {
                         question: newAnswer.questionId,
-                        answer: newAnswer.selectedOption,
+                        answer: processedAnswer, // Sử dụng processedAnswer
                         isCorrect: newAnswer.isCorrect,
                         points: newAnswer.points || 100,
                         timeTaken: newAnswer.timeTaken || 0
@@ -102,7 +139,7 @@ export const addAnswerToResult = async (req, res) => {
                 // Nếu là câu trả lời mới, thêm vào danh sách
                 updatedAnswers.push({
                     question: newAnswer.questionId,
-                    answer: newAnswer.selectedOption,
+                    answer: processedAnswer, // Sử dụng processedAnswer
                     isCorrect: newAnswer.isCorrect,
                     points: newAnswer.points || 100,
                     timeTaken: newAnswer.timeTaken || 0
@@ -121,7 +158,7 @@ export const addAnswerToResult = async (req, res) => {
         });
         
         result.UserAnswers = updatedAnswers;
-        result.score = totalScore; // Đảm bảo totalScore là số
+        result.score = totalScore;
         
         if (completed) {
             result.status = 'COMPLETED';
@@ -136,12 +173,22 @@ export const addAnswerToResult = async (req, res) => {
                 id: result._id,
                 score: result.score,
                 status: result.status,
-                answers: result.UserAnswers.map(ans => ({
-                    questionId: ans.question,
-                    selectedOption: ans.answer,
-                    isCorrect: ans.isCorrect,
-                    points: ans.points || 100
-                }))
+                answers: result.UserAnswers.map(ans => {
+                    // Parse lại answer khi return về frontend
+                    let parsedAnswer;
+                    try {
+                        parsedAnswer = JSON.parse(ans.answer);
+                    } catch (e) {
+                        parsedAnswer = ans.answer; // Nếu không parse được thì giữ nguyên
+                    }
+                    
+                    return {
+                        questionId: ans.question,
+                        selectedOption: parsedAnswer,
+                        isCorrect: ans.isCorrect,
+                        points: ans.points || 100
+                    };
+                })
             }
         });
     } catch (error) {
@@ -215,3 +262,16 @@ export const getTopTenPlayers = async (req, res) => {
             res.status(500).json({ message: error.message });
     }
 }
+
+
+export const submitAnswer = async (req, res) => {
+    const { questionId, answer } = req.body;
+
+  const question = await Question.findById(questionId);
+  if (!question) return res.status(404).json({ message: 'Question not found' });
+
+  const score = gradeQuestion(question, answer);
+  return res.json({ score });
+}
+
+
