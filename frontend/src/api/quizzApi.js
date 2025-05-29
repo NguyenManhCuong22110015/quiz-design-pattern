@@ -78,6 +78,12 @@ export async function getChallengesQuiz() {
 
 
 export async function deleteQuiz(quizId) {
-    const response = await API.delete(`api/quizzes/delete/${quizId}`);
+    const response = await API.delete(`api/quizzes/delete/${quizId}`);  
+    return response.data;
+}
+
+
+export async function updateQuizStatus(quizId, action) {
+    const response = await API.put(`api/quizzes/${quizId}/state`, action);
     return response.data;
 }

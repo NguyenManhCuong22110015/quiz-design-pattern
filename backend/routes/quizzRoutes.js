@@ -6,7 +6,9 @@ import { generateQuiz, generateQuizFromPDF } from '../services/generateQuizServi
 import multer from 'multer';
 import Question from '../models/Question.js';
 import { fetchImage } from '../config/googleSearch.js';
-import { getDetailById, getChallengesQuizzes, searchQuizze } from '../controllers/quizzController.js';
+import { getDetailById, getChallengesQuizzes, searchQuizze,updateQuizStatus } from '../controllers/quizzController.js';
+import { QuizContext } from '../StatePatten/QuizContext.js';
+
 
 const router = Router();
 
@@ -37,6 +39,7 @@ router.get('/getById', async (req, res) => {
   }
 });
 
+router.put("/:id/state", updateQuizStatus);
 
 router.get('/getDetailById', getDetailById);
 

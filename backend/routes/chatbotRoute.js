@@ -1,10 +1,30 @@
+import MarkdownIt from 'markdown-it'; // npm install markdown-it
 import e, { Router } from 'express';
 import { initChatBot } from '../services/generateQuizService.js';
 import { queryData } from '../services/NLQ.js';
-import { content } from 'googleapis/build/src/apis/content/index.js';
 import { generateContent } from '../services/functionCall.js';
 
 const router = Router();
+const md = new MarkdownIt();
+
+// Custom renderer for mobile-friendly text
+const mobileRenderer = new MarkdownIt({
+  html: false,
+  breaks: true,
+  linkify: true
+});
+
+// Override renderers for mobile format
+mobileRenderer.renderer.rules.strong_open = () => '🔹 ';
+mobileRenderer.renderer.rules.strong_close = () => '';
+mobileRenderer.renderer.rules.em_open = () => '• ';
+mobileRenderer.renderer.rules.em_close = () => '';
+mobileRenderer.renderer.rules.heading_open = (tokens, idx) => {
+  const level = tokens[idx].tag.slice(1);
+  return '🔸'.repeat(level) + ' ';
+};
+mobileRenderer.renderer.rules.heading_close = () => '\n';
+mobileRenderer.renderer.rules.code_inline = (tokens, idx) => `[${tokens[idx].content}]`;
 
 router.post('/chat', async (req, res) => {
   try {
@@ -16,6 +36,10 @@ router.post('/chat', async (req, res) => {
       const tryQuery = await queryData(prompt);
       text = tryQuery.answer;
     }
+    if (!text) {
+      text = "Xin lỗi, tôi không thể trả lời câu hỏi này.";
+    }
+    
 
     res.json(text);
   } catch (error) {
@@ -26,44 +50,33 @@ router.post('/chat', async (req, res) => {
 router.post('/chatbot', async (req, res) => {
   try {
     const message = req.body.message;
+    let prompt = message?.content;
 
-    let prompt = message.content;
-
-  let text = await initChatBot(prompt);
+    let text = await initChatBot(prompt);
     
     if (!text) {
       const tryQuery = await queryData(prompt);
-      text = tryQuery.answer;
+      text = tryQuery?.answer;
+    }
+    
+    if (!text) {
+      text = await generateContent(prompt);
+    }
+    
+    if (!text) {
+      text = "❌ Xin lỗi, tôi không thể trả lời câu hỏi này.";
     }
 
-    // xử lý lastMessage để trả về phản hồi
     let botReply = {
       role: 'assistant',
-      content: text
+      content: mobileRenderer.render(text) // Dùng markdown-it
     };
-
-    if (!botReply.content) {
-
-      const content = await generateContent(prompt);
-      if (content) {
-        botReply = {
-          role: 'assistant',
-          content: content
-        };
-      } else {
-      botReply = {
-      role: 'assistant',
-      content: "Xin lỗi, tôi không thể trả lời câu hỏi này."
-      }
-    };
-    }
 
     res.json({ response: botReply });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 
 

@@ -11,6 +11,7 @@ import { checkProcess, initialResult, addAnswerToResult, completeResult, checkAn
 import { showError, showSuccess } from '../components/common/Notification'
 import { FiClock, FiAward, FiCheckCircle, FiHelpCircle, FiChevronRight, FiFlag } from 'react-icons/fi'
 import { quizScoreSubject } from '../patterns/QuizObserver';
+import { initializeWebSocket, notifyGlobalQuizComplete } from '../services/websocket'
 const PlayPage = () => {
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -38,7 +39,13 @@ const PlayPage = () => {
     const autoSaveTimerRef = useRef(null);
     // Thêm ref để theo dõi việc đã khởi tạo chưa
     const isInitializedRef = useRef(false);
-
+ useEffect(() => {
+        initializeWebSocket().then(() => {
+            console.log("✅ WebSocket initialized for PlayPage");
+        }).catch(error => {
+            console.error("❌ Failed to initialize WebSocket:", error);
+        });
+    }, []);
     // 1. Kiểm tra người dùng đã đăng nhập chưa và load dữ liệu
     useEffect(() => {
         if (!currentUser) {
@@ -143,7 +150,7 @@ const PlayPage = () => {
                     });
                     setResult(newResult);
                 }
-
+                
                 setIsInitialized(true);
             } catch (error) {
                 console.error("Error initializing quiz:", error);
@@ -156,6 +163,7 @@ const PlayPage = () => {
         };
 
         initializeQuiz();
+        
 
         // Cleanup function
         return () => {
@@ -321,6 +329,7 @@ const handleCheckAnswer = async () => {
                 setShowCountdown(false);
             }, 500);
         }
+        
     }, [countdown, showCountdown, loading, quizComplete]);
 
     // 5. Xử lý khi người dùng trả lời câu hỏi
@@ -468,6 +477,13 @@ const handleCheckAnswer = async () => {
                 score: score,
                 timestamp: new Date().getTime() // Dùng timestamp để dễ parse
             }));
+             try {
+
+                await notifyGlobalQuizComplete(`${currentUser.name || 'Anonymous'} has completed the quiz with a score of ${score}.`);
+                console.log("✅ Global notification sent successfully");
+            } catch (error) {
+                console.error("❌ Failed to send global notification:", error);
+            }
             
         } catch (error) {
             console.error("Error finishing quiz:", error);
@@ -475,6 +491,17 @@ const handleCheckAnswer = async () => {
             setQuizComplete(true);
         }
     };
+
+
+    // const handleTest = async () => {
+    //  try {
+    //             await notifyGlobalQuizComplete(currentUser.name || 'Anonymous');
+    //             console.log("✅ Global notification sent successfully");
+    //         } catch (error) {
+    //             console.error("❌ Failed to send global notification:", error);
+    //         }
+        
+    // }
 
     // 8. Xử lý làm lại quiz
     const restartQuiz = async () => {
@@ -669,6 +696,7 @@ const handleCheckAnswer = async () => {
             }}>
                 <NavBar />
                 <Container className="py-4">
+                    {/* <button onClick={handleTest} >Test</button> */}
                     <Row className="justify-content-center">
                         <Col lg={10}>
                             <motion.div

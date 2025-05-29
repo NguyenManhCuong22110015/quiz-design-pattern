@@ -11,6 +11,13 @@ const userSchema = new mongoose.Schema({
   level: {type: String, default: 'easy'},
   rating: {type: Number, default: 0},
   published: {type: Boolean, default: false},
+
+  status: {
+    type: String,
+    enum: ['draft', 'review','pending_review', 'published', 'archived'],
+    default: 'draft',
+  },
+  
 });
 
 export default mongoose.model('Quizze', userSchema, 'quizzes');

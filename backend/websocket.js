@@ -1,4 +1,4 @@
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import Room from './models/RoomQuiz.js';
 import Quizze from './models/Quizze.js';
 import Question from './models/Question.js';
@@ -39,7 +39,7 @@ async function startGame(roomId) {
 
     try {
         const roomDoc = await Room.findById(roomId);
-        const quizzes = await Quizze.find({ 
+        const quizzes = await Quizze.find({
             _id: { $in: roomDoc.QuizzIds }
         });
 
@@ -94,10 +94,10 @@ async function joinRoom(roomId, username, ws) {
         }
 
         // Add player
-        activeRooms.get(roomId).players.set(username, { 
-            score: 0, 
+        activeRooms.get(roomId).players.set(username, {
+            score: 0,
             time: 0,
-            ws: ws 
+            ws: ws
         });
 
         // Update player count in database
@@ -117,7 +117,7 @@ function sendNextQuestion(roomId) {
     if (!activeRoom?.gameState?.isActive) return;
 
     const { gameState } = activeRoom;
-    
+
     if (gameState.currentQuestionIndex >= gameState.questions.length) {
         console.log("🏁 Game over");
         endGame(roomId);
@@ -153,7 +153,7 @@ function checkAnswersAndProgress(roomId) {
         const playerAnswer = gameState.playerAnswers.get(username);
         // Kiểm tra đáp án đúng bằng cách so sánh với isCorrect của option
         const isCorrect = currentQuestion.options[playerAnswer?.answer]?.isCorrect === true;
-        
+
         if (isCorrect) {
             const currentScore = gameState.scores.get(username) || 0;
             gameState.scores.set(username, currentScore + 10);
@@ -230,9 +230,9 @@ function initWebSocket(server) {
                                 players: Array.from(activeRooms.get(data.roomId).players.keys())
                             });
                         } else {
-                            ws.send(JSON.stringify({ 
-                                type: "error", 
-                                message: joinResult.message 
+                            ws.send(JSON.stringify({
+                                type: "error",
+                                message: joinResult.message
                             }));
                         }
                         break;
@@ -265,43 +265,43 @@ function initWebSocket(server) {
                             broadcastToRoom(userRoom, {
                                 type: "ranking",
                                 ranking: Array.from(activeRoom.players.entries())
-                                    .map(([name, data]) => [name, { 
-                                        score: data.score, 
-                                        time: data.time 
+                                    .map(([name, data]) => [name, {
+                                        score: data.score,
+                                        time: data.time
                                     }])
                             });
                         }
                         break;
                     case "start_game": {
-                            const { roomId } = data;
-                            const room = activeRooms.get(roomId);
-                            if (room) {
-                                // First notify all players
-                                broadcastToRoom(roomId, {
-                                    type: "start_game",
-                                    message: "Game is starting"
-                                });
-                                // Then start the game
-                                await startGame(roomId);
-                            }
+                        const { roomId } = data;
+                        const room = activeRooms.get(roomId);
+                        if (room) {
+                            // First notify all players
+                            broadcastToRoom(roomId, {
+                                type: "start_game",
+                                message: "Game is starting"
+                            });
+                            // Then start the game
+                            await startGame(roomId);
+                        }
                         break;
+                    }
+
+                    case "submit_answer": {
+                        if (!userRoom) return;
+                        const activeRoom = activeRooms.get(userRoom);
+                        if (!activeRoom?.gameState?.isActive) return;
+
+                        const { username, answer } = data;
+                        activeRoom.gameState.playerAnswers.set(username, { answer });
+
+                        if (activeRoom.gameState.playerAnswers.size === activeRoom.players.size) {
+                            checkAnswersAndProgress(userRoom);
                         }
-                        
-                        case "submit_answer": {
-                            if (!userRoom) return;
-                            const activeRoom = activeRooms.get(userRoom);
-                            if (!activeRoom?.gameState?.isActive) return;
-                        
-                            const { username, answer } = data;
-                            activeRoom.gameState.playerAnswers.set(username, { answer });
-                        
-                            if (activeRoom.gameState.playerAnswers.size === activeRoom.players.size) {
-                                checkAnswersAndProgress(userRoom);
-                            }
-                            break;
-                        }
-                        case "end_game":
-                        const {roomId_start} = data;
+                        break;
+                    }
+                    case "end_game":
+                        const { roomId_start } = data;
                         console.log("📩 End game:", roomId_start);
                         const playroom = activeRooms.get(roomId_start);
                         if (playroom) {
@@ -312,20 +312,51 @@ function initWebSocket(server) {
                                 }));
                             })
                         }
-                            break;
-                        case "next_question": {
-                            const { roomId } = data;
-                            const activeRoom = activeRooms.get(roomId);
-                            if (activeRoom?.gameState?.isActive) {
-                                activeRoom.gameState.currentQuestionIndex++;
-                                sendNextQuestion(roomId);
-                            }
-                            break;
+                        break;
+                    case "next_question": {
+                        const { roomId } = data;
+                        const activeRoom = activeRooms.get(roomId);
+                        if (activeRoom?.gameState?.isActive) {
+                            activeRoom.gameState.currentQuestionIndex++;
+                            sendNextQuestion(roomId);
                         }
+                        break;
+                    }
+                   case 'global_quiz_completed': {
+                console.log("🎉 Backend: Global quiz completion received:", data);
+                
+                // Broadcast to ALL connected clients
+                console.log(`📊 Broadcasting to ${wss.clients.size} total clients`);
+                
+                let successCount = 0;
+                let errorCount = 0;
+                
+                wss.clients.forEach((client) => {
+                    if (client.readyState === 1) { // WebSocket.OPEN
+                        try {
+                            const responseMessage = {
+                                type: 'global_quiz_completed',
+                                username: data.username,
+                                timestamp: data.timestamp || new Date().toISOString()
+                            };
+                            
+                            client.send(JSON.stringify(responseMessage));
+                            successCount++;
+                            console.log("✅ Sent to client:", responseMessage);
+                        } catch (error) {
+                            console.error("❌ Error sending to client:", error);
+                            errorCount++;
+                        }
+                    }
+                });
+                
+                console.log(`📊 Broadcast result: ${successCount} success, ${errorCount} errors`);
+                break;
+            }
                 }
-                
-                
-                
+
+
+
             } catch (error) {
                 console.error('Error processing message:', error);
             }
@@ -383,7 +414,7 @@ function broadcastToRoom(roomId, data) {
     }
 
     console.log(`📢 Broadcasting to ${activeRoom.players.size} players in room ${roomId}`);
-    
+
     // Filter out disconnected players first
     for (const [username, player] of activeRoom.players) {
         if (player.ws.readyState !== 1) {  // If not OPEN
