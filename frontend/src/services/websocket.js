@@ -36,6 +36,29 @@ export const initializeWebSocket = () => {
       
       resolve(ws);
     };
+     ws.onmessage = (event) => {
+      console.log("📨 Message received:", event.data);
+      
+      if (messageHandler) {
+        messageHandler(event);
+      }
+      
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Xử lý global quiz completion
+        if (data.type === 'global_quiz_completed') {
+          console.log("🎉 Global quiz completed received:", data);
+          
+          // Dispatch custom event để các component khác có thể lắng nghe
+          window.dispatchEvent(new CustomEvent('globalQuizCompleted', {
+            detail: data
+          }));
+        }
+      } catch (error) {
+        console.error("Error parsing message:", error);
+      }
+    };
 
     ws.onerror = (error) => {
       isConnecting = false;
@@ -180,4 +203,12 @@ export const sendNextQuestion = (roomId) => {
   });
 };
 
+export const notifyGlobalQuizComplete = (username) => {
+  console.log("🚀 Sending global quiz completion notification for:", username);
+  return safeSend({
+    type: "global_quiz_completed",
+    username,
+    timestamp: new Date().toISOString()
+  });
+};
 export default ws;

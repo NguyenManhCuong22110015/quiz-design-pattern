@@ -4,7 +4,7 @@ import multer from 'multer';
 import Quizze from '../models/Quizze.js';
 import User from '../models/User.js';
 import Category from '../models/Category.js';
-
+import { QuizContext } from '../StatePatten/QuizContext.js';
 import { SearchByTitleStrategy, SearchByCategoryStrategy, SearchByDifficultyStrategy, SearchByComplexStrategy } from '../Strategy/quizSearchStrategies.js';
 
 const storage = multer.memoryStorage();
@@ -221,5 +221,50 @@ export const searchQuizze = async (req, res) => {
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+}
+
+
+export const updateQuizStatus = async (req, res) => {
+  try {
+    const quiz = await Quizze.findById(req.params.id);
+    if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+
+    console.log("Received action:", req.body.action);
+    console.log("Quiz before update:", quiz);
+
+    // Sử dụng QuizContext 
+    const quizContext = new QuizContext(quiz);
+
+    switch(req.body.action) {
+      case 'review':
+      case 'requestReview':
+      case 'pending_review':
+        quizContext.requestReview();
+        break;
+      case 'publish':
+      case 'published':
+        quizContext.publish();
+        break;
+      case 'archive':
+      case 'archived':
+        quizContext.archive();
+        break;
+      case 'draft':
+        
+        quiz.status = 'draft';
+        quiz.published = false;
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid action. Valid actions: draft, pending_review, published, archived' });
+    }
+
+    const updatedQuiz = await quiz.save();
+    console.log("Quiz after update:", updatedQuiz);
+    
+    res.json(updatedQuiz);
+  } catch (error) {
+    console.error("Error in updateQuizStatus:", error);
+    res.status(400).json({ message: error.message });
   }
 }

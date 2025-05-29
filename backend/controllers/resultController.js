@@ -3,6 +3,7 @@ import Question from "../models/Question.js";
 import mongoose from 'mongoose';
 import User from "../models/User.js";
 import { gradeQuestion } from "../services/gradeService.js"; // Assuming you have a utility function to grade questions
+import Quizze from "../models/Quizze.js";
 
 export const initializeResult = async (req, res) => {
     try {
@@ -273,5 +274,48 @@ export const submitAnswer = async (req, res) => {
   const score = gradeQuestion(question, answer);
   return res.json({ score });
 }
+
+
+export const getResultByUserId = async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const results = await Result.find({ user: userId }).sort({ startTime: -1 });
+
+        const data = await Promise.all(
+            results.map(async (result) => {
+                const quiz = await Quizze.findById(result.quiz).select('title description image').lean();
+                if (!quiz) return null;
+
+                return {
+                    id: result._id,
+                    quiz,
+                    score: result.score,
+                    startTime: result.startTime,
+                    endTime: result.endTime,
+                    status: result.status,
+                    UserAnswers: result.UserAnswers.map(ans => ({
+                        questionId: ans.question,
+                        selectedOption: ans.answer,
+                        isCorrect: ans.isCorrect,
+                        points: ans.points || 100
+                    }))
+                };
+            })
+        );
+
+        // ⚠️ Lọc bỏ phần tử null trước khi trả response
+        const filteredData = data.filter(Boolean);
+
+        if (filteredData.length === 0) {
+            return res.status(404).json({ message: "No valid data found for this user" });
+        }
+
+        res.status(200).json(filteredData);
+    } catch (error) {
+        console.error("Error fetching results by user ID:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
 
 

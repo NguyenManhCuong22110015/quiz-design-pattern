@@ -14,6 +14,8 @@ import { getTopTenPlayers } from '../api/resuiltAPI';
 import RateQuiz from '../components/Quizz/RateQuiz';
 import error from '../assets/error.jpg'
 import { quizScoreSubject } from '../patterns/QuizObserver';
+import { setMessageHandler } from '../services/websocket';
+import { showSuccess } from '../components/common/Notification';
 
 const QuizDetailPage = () => {
   const { id } = useParams();
@@ -66,7 +68,40 @@ const QuizDetailPage = () => {
   }, [id, currentUser]);
 
   
-  // Thêm ngay sau useEffect của observer pattern
+useEffect(() => {
+  // Observer để lắng nghe quiz completion
+  const quizObserver = {
+    update: (data) => {
+      console.log("🎉 Quiz completed notification received:", data);
+      
+      showSuccess(`${data.username}`);
+    }
+  };
+
+  // Subscribe to observer
+  quizScoreSubject.subscribe(quizObserver);
+
+  // Setup WebSocket message handler
+  setMessageHandler((event) => {
+    try {
+      const message = JSON.parse(event.data);
+      console.log("📨 WebSocket message received:", message);
+
+      if (message.type === 'global_quiz_completed') {
+        // Notify through observer pattern
+        quizScoreSubject.notify(message);
+      }
+    } catch (error) {
+      console.error("Error parsing WebSocket message:", error);
+    }
+  });
+
+  // Cleanup
+  return () => {
+    quizScoreSubject.unsubscribe(quizObserver);
+  };
+}, []);
+
   useEffect(() => {
     // Xử lý sự kiện thay đổi localStorage (giao tiếp giữa các tab)
     const handleStorageChange = (e) => {
